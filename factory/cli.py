@@ -152,6 +152,107 @@ def e2e(issue: Path, overrides: tuple[str, ...], max_rework: int, stop_after: st
     console.print_json(json.dumps(summary, default=str))
 
 
+# ---------------------------------------------------------------------------- ci
+
+
+@main.group()
+def ci() -> None:
+    """Stations as CI steps (used by .github/workflows/factory-*.yml; runnable locally).
+
+    Each step works on the current checkout, writes markdown + JSON to factory-out/
+    (FACTORY_OUT) and step outputs to $GITHUB_OUTPUT.
+    """
+
+
+_spec_opt = click.option("--spec", "spec", type=click.Path(exists=True, path_type=Path), required=True,
+                         help="Spec in the checkout, e.g. warehouse/specs/<id>.yaml")
+
+
+@ci.command("intake")
+@click.option("--issue-file", type=click.Path(exists=True, path_type=Path), required=True,
+              help="Issue title, body and comments as markdown (the workflow writes it with `gh issue view`)")
+def ci_intake(issue_file: Path) -> None:
+    """Issue -> spec. Writes warehouse/specs/<id>.yaml when the spec is ready."""
+    from factory import ci as c
+
+    spec = c.intake(issue_file)
+    raise SystemExit(0 if spec else 1)
+
+
+@ci.command("implement")
+@_spec_opt
+@click.option("--feedback", type=click.Path(path_type=Path), default=None, help="Findings of a previous round")
+def ci_implement(spec: Path, feedback: Path | None) -> None:
+    """Spec -> dbt models in warehouse/models/marts/<id>/ of the checkout."""
+    from factory import ci as c
+
+    c.implement(spec, feedback)
+
+
+@ci.command("bi")
+@_spec_opt
+def ci_bi(spec: Path) -> None:
+    """Spec + models -> warehouse/charts/<id>.yml in the checkout."""
+    from factory import ci as c
+
+    c.bi(spec)
+
+
+@ci.command("checks")
+@_spec_opt
+def ci_checks(spec: Path) -> None:
+    """Deterministic gates, no LLM: dbt build, acceptance checks, checkup, dct validate."""
+    from factory import ci as c
+
+    raise SystemExit(0 if c.checks(spec) else 1)
+
+
+@ci.command("review")
+@_spec_opt
+@click.option("--base", default="origin/main", show_default=True, help="Git ref the change is compared with")
+@click.option("--pr-body", type=click.Path(path_type=Path), default=None)
+def ci_review(spec: Path, base: str, pr_body: Path | None) -> None:
+    """Review the checkout against --base. Writes review.md / review.json."""
+    from factory import ci as c
+
+    raise SystemExit(0 if c.review(spec, base, pr_body) else 1)
+
+
+@ci.command("governance")
+@click.option("--product", required=True)
+def ci_governance(product: str) -> None:
+    """Check the product against the standards. Writes governance.md / governance.json."""
+    from factory import ci as c
+
+    raise SystemExit(0 if c.governance(product) else 1)
+
+
+@ci.command("feedback")
+def ci_feedback() -> None:
+    """Merge checks/review/governance findings into factory-out/feedback.md."""
+    from factory import ci as c
+
+    c.feedback()
+
+
+@ci.command("line-manager")
+@click.option("--runs", "runs_dir", type=click.Path(exists=True, path_type=Path), required=True)
+def ci_line_manager(runs_dir: Path) -> None:
+    """Traces of recent pipeline runs -> factory-out/line_manager.md."""
+    from factory import ci as c
+
+    raise SystemExit(0 if c.line_manager(runs_dir) else 1)
+
+
+@ci.command("collect-runs")
+@click.argument("dest", type=click.Path(path_type=Path))
+def ci_collect_runs(dest: Path) -> None:
+    """Copy run summaries + traces (no workspaces) to DEST for artifact upload."""
+    from factory import ci as c
+
+    console.print(f"collected {c.collect_runs(dest)} runs into {dest}")
+
+
 # -------------------------------------------------------------------- benchmark
 
 
@@ -207,9 +308,18 @@ def bench_run(stage: str, agent_dir: Path | None, cases: tuple[str, ...], oracle
 
 @bench.command("report")
 @click.option("--stage", default=None)
-def bench_report(stage: str | None) -> None:
+@click.option("--markdown", is_flag=True, help="Print a markdown table (for CI summaries and PR comments)")
+def bench_report(stage: str | None, markdown: bool) -> None:
     """Leaderboard of every recorded benchmark run (benchmark/results/)."""
     from benchmark.harness import load_results
+
+    if markdown:
+        rows = [r for r in sorted(load_results(), key=lambda r: (r["stage"], -r["score"])) if not stage or r["stage"] == stage]
+        print("| stage | label | fingerprint | score | $ total | $/run | turns | s/run |\n|---|---|---|---:|---:|---:|---:|---:|")
+        for r in rows:
+            print(f"| {r['stage']} | {r['label']} | `{r.get('agent_fingerprint')}` | {r['score']:.3f} | {r['total_cost_usd']:.2f} "
+                  f"| {r['mean_cost_usd']:.2f} | {r['mean_turns']} | {r['mean_duration_s']} |")
+        return
 
     t = Table("finished", "stage", "label", "fingerprint", "score", "$ total", "$/run", "turns", "s/run", "cases")
     for r in sorted(load_results(), key=lambda r: (r["stage"], -r["score"])):

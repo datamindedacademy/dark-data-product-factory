@@ -1,0 +1,28 @@
+# CI for the factory itself (no LLM calls, no API key needed):
+# the benchmark's own tests and the oracle run of every station.
+name: "ci · factory"
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths: ["factory/**", "benchmark/**", "agents/**", "tests/**", "standards/**", "scripts/**", "pyproject.toml", "uv.lock"]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/factory-setup
+      - name: Benchmark self-tests (oracle = 1.0, doing nothing = 0, defects are caught)
+        run: pytest -q
+      - name: Oracle run of every station
+        run: |
+          for s in intake implement review governance bi line_manager; do
+            factory bench run "$s" --oracle --parallel 3
+          done
+          factory bench report --markdown >> "$GITHUB_STEP_SUMMARY"

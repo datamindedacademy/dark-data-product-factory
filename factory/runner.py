@@ -32,7 +32,7 @@ from claude_agent_sdk import ClaudeAgentOptions, create_sdk_mcp_server, query
 from factory import paths, workspace
 from factory.tracing import Tracer
 
-DEFAULT_MODEL = os.environ.get("FACTORY_MODEL", "claude-opus-5-5")
+DEFAULT_MODEL = os.environ.get("FACTORY_MODEL") or "claude-opus-5-5"
 
 
 @dataclass

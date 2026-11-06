@@ -1,0 +1,69 @@
+# Evaluation gate for changes to the agents: label a PR `run-benchmark` (or dispatch)
+# and the benchmark runs for every station whose agent directory changed. Costs API credits.
+name: "factory · benchmark"
+
+on:
+  pull_request:
+    types: [labeled, synchronize]
+    paths: ["agents/**"]
+  workflow_dispatch:
+    inputs:
+      stations:
+        description: Space-separated stations (intake implement review governance bi line_manager)
+        required: true
+        default: intake
+      repeat:
+        description: Runs per case
+        default: "2"
+
+permissions:
+  contents: read
+  pull-requests: write
+
+env:
+  ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+  GH_TOKEN: ${{ github.token }}
+  STATIONS_INPUT: ${{ inputs.stations }}
+  REPEAT: ${{ inputs.repeat || '2' }}
+  LABEL: ${{ github.head_ref || github.ref_name }}
+  BASE_REF: ${{ github.base_ref }}
+
+jobs:
+  bench:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'run-benchmark')
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/factory-setup
+      - name: Stations to benchmark
+        id: which
+        run: |
+          if [ -n "$STATIONS_INPUT" ]; then s="$STATIONS_INPUT"; else
+            s=$(git diff --name-only "origin/$BASE_REF"...HEAD -- agents/ | cut -d/ -f2 | sort -u \
+                | grep -xE 'intake|implement|review|governance|bi|line_manager' | tr '\n' ' ')
+          fi
+          s=$(echo "$s" | tr ' ' '\n' | grep -xE 'intake|implement|review|governance|bi|line_manager' | tr '\n' ' ')
+          echo "stations=$s" >> "$GITHUB_OUTPUT"
+      - name: Benchmark
+        run: |
+          for s in ${{ steps.which.outputs.stations }}; do
+            factory bench run "$s" --repeat "$REPEAT" --label "$LABEL"
+          done
+          factory bench report --markdown > bench.md
+          cat bench.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Comment on the PR
+        if: github.event_name == 'pull_request'
+        run: gh pr comment "${{ github.event.pull_request.number }}" --body-file bench.md
+      - name: Collect traces
+        if: always()
+        run: factory ci collect-runs traces
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: factory-traces-bench-${{ github.run_id }}
+          path: |
+            traces/
+            benchmark/results/

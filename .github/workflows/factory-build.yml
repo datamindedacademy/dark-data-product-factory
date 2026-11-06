@@ -1,0 +1,188 @@
+# The front half of the dark factory: issue -> spec -> models -> dashboard -> pull request.
+#
+#   label an issue `data-product-request`  ─▶ intake
+#        ready ─▶ branch factory/issue-<n> ─▶ implement ─▶ bi ─▶ PR "Closes #<n>"  (─▶ factory-pr.yml)
+#        not ready ─▶ questions posted on the issue, label `needs-clarification`;
+#                     the requester's next comment re-runs intake with the whole thread.
+name: "factory · build"
+
+on:
+  issues:
+    types: [labeled]
+  issue_comment:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      issue:
+        description: Issue number to (re)build
+        required: true
+
+concurrency:
+  group: factory-issue-${{ github.event.issue.number || inputs.issue }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+env:
+  ISSUE: ${{ github.event.issue.number || inputs.issue }}
+  BRANCH: factory/issue-${{ github.event.issue.number || inputs.issue }}
+  ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+  # Pushes and PRs made with the default GITHUB_TOKEN do not trigger other workflows.
+  # FACTORY_TOKEN (GitHub App token or fine-grained PAT) lets factory-pr.yml pick the PR up.
+  GH_TOKEN: ${{ secrets.FACTORY_TOKEN || github.token }}
+  # Swap a station for another agent directory with repository variables, e.g. FACTORY_AGENT_BI=agents/bi-teamx
+  FACTORY_AGENT_INTAKE: ${{ vars.FACTORY_AGENT_INTAKE }}
+  FACTORY_AGENT_IMPLEMENT: ${{ vars.FACTORY_AGENT_IMPLEMENT }}
+  FACTORY_AGENT_REVIEW: ${{ vars.FACTORY_AGENT_REVIEW }}
+  FACTORY_AGENT_GOVERNANCE: ${{ vars.FACTORY_AGENT_GOVERNANCE }}
+  FACTORY_AGENT_BI: ${{ vars.FACTORY_AGENT_BI }}
+  FACTORY_MODEL: ${{ vars.FACTORY_MODEL }}
+
+jobs:
+  intake:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'issues' && github.event.label.name == 'data-product-request') ||
+      (github.event_name == 'issue_comment' && !github.event.issue.pull_request &&
+       contains(github.event.issue.labels.*.name, 'needs-clarification') &&
+       github.event.comment.user.type != 'Bot')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      status: ${{ steps.intake.outputs.status }}
+      product_id: ${{ steps.intake.outputs.product_id }}
+      title: ${{ steps.intake.outputs.title }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.FACTORY_TOKEN || github.token }}
+      - uses: ./.github/actions/factory-setup
+      - name: Fetch the issue thread
+        run: |
+          gh issue view "$ISSUE" --json number,title,author,body,comments --jq '
+            "---\nnumber: \(.number)\ntitle: \(.title | @json)\nrequested_by: \(.author.login)\n---\n\n\(.body)\n" +
+            ([.comments[] | "\n## Comment by \(.author.login)\n\n\(.body)\n"] | join(""))' > issue.md
+          cat issue.md
+      - name: Intake agent
+        id: intake
+        run: factory ci intake --issue-file issue.md
+      - name: Report on the issue
+        if: always() && steps.intake.outputs.status != ''
+        env:
+          STATUS: ${{ steps.intake.outputs.status }}
+        run: |
+          gh issue comment "$ISSUE" --body-file factory-out/comment.md
+          cat factory-out/comment.md >> "$GITHUB_STEP_SUMMARY"
+          if [ "$STATUS" = "ready" ]; then
+            gh issue edit "$ISSUE" --remove-label needs-clarification --add-label factory:building || true
+          else
+            gh label create needs-clarification --color FBCA04 2>/dev/null || true
+            gh issue edit "$ISSUE" --add-label needs-clarification
+          fi
+      - name: Start the product branch
+        if: steps.intake.outputs.status == 'ready'
+        env:
+          PRODUCT: ${{ steps.intake.outputs.product_id }}
+        run: |
+          git checkout -B "$BRANCH"
+          git add warehouse/specs/
+          git commit -m "factory: spec for $PRODUCT (#$ISSUE)"
+          git push --force-with-lease origin "$BRANCH"
+      - name: Collect traces
+        if: always()
+        run: factory ci collect-runs traces
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: factory-traces-intake-${{ github.run_id }}-${{ github.run_attempt }}
+          path: traces/
+          if-no-files-found: ignore
+
+  implement:
+    needs: intake
+    if: needs.intake.outputs.status == 'ready'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      PRODUCT: ${{ needs.intake.outputs.product_id }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.BRANCH }}
+          token: ${{ secrets.FACTORY_TOKEN || github.token }}
+      - uses: ./.github/actions/factory-setup
+      - name: Implementation agent
+        run: factory ci implement --spec "warehouse/specs/$PRODUCT.yaml"
+      - name: Push models
+        run: |
+          git add "warehouse/models/marts/$PRODUCT"
+          git commit -m "factory: implement $PRODUCT (#$ISSUE)" || echo "nothing to commit"
+          git push origin "$BRANCH"
+          cat factory-out/implement.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: factory-out-implement-${{ github.run_id }}
+          path: factory-out/
+      - name: Collect traces
+        if: always()
+        run: factory ci collect-runs traces
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: factory-traces-implement-${{ github.run_id }}-${{ github.run_attempt }}
+          path: traces/
+          if-no-files-found: ignore
+
+  bi:
+    needs: [intake, implement]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      PRODUCT: ${{ needs.intake.outputs.product_id }}
+      TITLE: ${{ needs.intake.outputs.title }}  # derived from the issue: only ever use it via env
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.BRANCH }}
+          token: ${{ secrets.FACTORY_TOKEN || github.token }}
+      - uses: ./.github/actions/factory-setup
+      - name: BI agent
+        run: factory ci bi --spec "warehouse/specs/$PRODUCT.yaml"
+      - name: Push dashboard
+        run: |
+          git add "warehouse/charts/$PRODUCT.yml" || true
+          git commit -m "factory: dashboard for $PRODUCT (#$ISSUE)" || echo "nothing to commit"
+          git push origin "$BRANCH"
+      - uses: actions/download-artifact@v4
+        with:
+          name: factory-out-implement-${{ github.run_id }}
+          path: factory-out/
+      - name: Open the pull request
+        run: |
+          if gh pr view "$BRANCH" --json number >/dev/null 2>&1; then
+            echo "PR already open"; exit 0
+          fi
+          gh label create factory --color 5319E7 2>/dev/null || true
+          {
+            echo "Closes #$ISSUE"
+            echo
+            echo "Data product \`$PRODUCT\` built by the factory: spec \`warehouse/specs/$PRODUCT.yaml\`,"
+            echo "models in \`warehouse/models/marts/$PRODUCT/\`, dashboard \`warehouse/charts/$PRODUCT.yml\`."
+            echo
+            cat factory-out/implement.md
+          } > pr.md
+          gh pr create --base "$DEFAULT_BRANCH" --head "$BRANCH" \
+            --title "Data product: $TITLE" --body-file pr.md --label factory
+      - name: Collect traces
+        if: always()
+        run: factory ci collect-runs traces
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: factory-traces-bi-${{ github.run_id }}-${{ github.run_attempt }}
+          path: traces/
+          if-no-files-found: ignore

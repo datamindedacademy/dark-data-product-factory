@@ -52,7 +52,10 @@ lesson.
    know the cost per run to set budgets. These numbers are not in the repo: they depend on
    the model and change with it.
 4. Build the hold-out suite (see below) in a private repo.
-5. Optional: create a GitHub repo from this one and file the issues in
+5. To run the line as CI during the day: push this repo to GitHub and configure it as in
+   [ci.md](ci.md) (secrets `ANTHROPIC_API_KEY`, `FACTORY_TOKEN`). Teams' agent PRs can then
+   be benchmarked in CI with the `run-benchmark` label.
+6. Optional: create a GitHub repo from this one and file the issues in
    `benchmark/products/*/issue.md` with the template in `.github/ISSUE_TEMPLATE/`, so the
    intake team can read real issues (`gh issue view 101 --json title,body`).
 
@@ -86,7 +89,7 @@ must score 1.0.
 | 12:30 | Lunch | |
 | 13:15 | Improve, round 2 (105') | Skills, tools, MCP servers, model/effort trade-offs. Variance: `--repeat`. |
 | 15:00 | Freeze (15') | Teams hand in their agent directory; facilitators run the hold-out suite. |
-| 15:15 | Integration (30') | All stations plugged into one line: `factory e2e --issue <new issue> --agent intake=... --agent bi=...` |
+| 15:15 | Integration (30') | All stations plugged into one line. In CI: set `FACTORY_AGENT_<STATION>` repository variables to the teams' agents and file a new issue (see [ci.md](ci.md)). Locally: `factory e2e --issue <new issue> --agent intake=... --agent bi=...` |
 | 15:45 | Demos (60') | 6-8 minutes per team. |
 | 16:45 | Retro (15') | What generalised, what overfitted, what you would automate next. |
 

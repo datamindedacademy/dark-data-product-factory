@@ -1,0 +1,22 @@
+name: Factory setup
+description: Python 3.15 + uv, project dependencies, and the generated Fernhill warehouse.
+runs:
+  using: composite
+  steps:
+    - uses: astral-sh/setup-uv@v6
+      with:
+        python-version: "3.15"
+        enable-cache: true
+    - name: Install dependencies
+      shell: bash
+      run: uv sync --extra dev --frozen
+    - name: Build the warehouse
+      shell: bash
+      run: |
+        echo "$GITHUB_WORKSPACE/.venv/bin" >> "$GITHUB_PATH"
+        uv run factory setup
+    - name: Git identity
+      shell: bash
+      run: |
+        git config --global user.name "fernhill-factory[bot]"
+        git config --global user.email "factory@fernhill.test"

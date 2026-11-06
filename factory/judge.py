@@ -17,7 +17,7 @@ from typing import Any
 
 from claude_agent_sdk import ClaudeAgentOptions, ResultMessage, query
 
-JUDGE_MODEL = os.environ.get("FACTORY_JUDGE_MODEL", "claude-sonnet-5-5")
+JUDGE_MODEL = os.environ.get("FACTORY_JUDGE_MODEL") or "claude-sonnet-5-5"
 
 SCHEMA = {
     "type": "object",

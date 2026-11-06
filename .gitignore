@@ -14,3 +14,4 @@ runs/
 benchmark/results/*
 !benchmark/results/.gitkeep
 .dct/
+factory-out/

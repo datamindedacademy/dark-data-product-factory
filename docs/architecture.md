@@ -14,6 +14,9 @@
  every station ─▶ runs/<run>/<station>-<n>/{prompt.txt, trace.jsonl, summary.json} ─▶ line manager
 ```
 
+The same stations run as a GitHub Actions pipeline (`factory ci <station>`, see
+[ci.md](ci.md)); `factory e2e` is the laptop version of that pipeline.
+
 ## Contracts (`factory/contracts.py`)
 
 | Artifact | Model | Written by | Read by |

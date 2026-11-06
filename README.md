@@ -39,6 +39,11 @@ factory bench report                                # leaderboard of everything 
 factory e2e --issue benchmark/products/category_performance/issue.md   # the whole line
 ```
 
+In production the factory runs as a **CI pipeline** on GitHub Actions: label an issue
+`data-product-request` and the line builds a branch, opens a PR, reviews, governs, reworks
+and (optionally) merges it. See [docs/ci.md](docs/ci.md); every CI step is a `factory ci`
+command you can run locally.
+
 Without an API key you can still explore everything: `factory bench run <station> --oracle`
 grades the golden answers (should be 1.0) and shows you exactly what the graders check.
 
@@ -59,7 +64,8 @@ grades the golden answers (should be 1.0) and shows you exactly what the graders
 warehouse/            Fernhill's dbt + dbt charts project (DuckDB). The "company repo" agents work in.
 standards/            Data product standards (rule ids GOV-001..011) used by review & governance.
 agents/<station>/     Baseline agents: agent.yaml, system_prompt.md, prompt.md, skills/   ← you edit these
-factory/              The factory: contracts, workspaces, agent runner + tracing, tools, e2e line, CLI
+factory/              The factory: contracts, workspaces, agent runner + tracing, tools, e2e line, CI stations, CLI
+.github/workflows/    The factory as CI: factory-build (issue → PR), factory-pr (gates, review, rework, merge), ...
 benchmark/
   products/           Golden data products: issue, spec, models, dashboard (the answer keys)
   cases/<station>/    Benchmark cases (YAML)                                            ← you add these
@@ -73,6 +79,7 @@ tests/                Tests of the benchmark itself (oracle = 1.0, doing nothing
 
 - [docs/capstone-day.md](docs/capstone-day.md) – the day: schedule, deliverables, scoring (facilitators start here)
 - [docs/architecture.md](docs/architecture.md) – contracts between stations, workspaces, runner, traces
+- [docs/ci.md](docs/ci.md) – the factory as a GitHub Actions pipeline (issue → PR → merge)
 - [docs/benchmark.md](docs/benchmark.md) – how grading works and how to design your own cases and graders
 - [agents/README.md](agents/README.md) – anatomy of an agent and the levers you can pull
 - [warehouse/README.md](warehouse/README.md) – Fernhill's data

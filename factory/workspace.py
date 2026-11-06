@@ -50,14 +50,17 @@ def _git(ws: Path, *args: str) -> None:
     sh(["git", "-c", "user.name=factory", "-c", "user.email=factory@fernhill.test", *args], ws)
 
 
-def create(run_dir: Path) -> Path:
-    """Copy the base project into ``run_dir/workspace`` and commit it on ``main``."""
+def create(run_dir: Path, source: Path | None = None) -> Path:
+    """Copy the project (``source`` or the repo root) into ``run_dir/workspace``, commit on ``main``."""
     if not paths.WAREHOUSE_DB.exists():
         raise SystemExit("warehouse/warehouse.duckdb missing - run `factory setup` first")
+    root = source or paths.ROOT
     ws = run_dir / "workspace"
     ws.mkdir(parents=True)
-    shutil.copytree(paths.WAREHOUSE, ws / "warehouse", ignore=_IGNORE)
-    shutil.copytree(paths.STANDARDS, ws / "standards")
+    shutil.copytree(root / "warehouse", ws / "warehouse", ignore=_IGNORE)
+    shutil.copytree(root / "standards", ws / "standards")
+    if not (ws / "warehouse" / "warehouse.duckdb").exists():
+        shutil.copy(paths.WAREHOUSE_DB, ws / "warehouse" / "warehouse.duckdb")
     (ws / "input").mkdir()
     (ws / "output").mkdir()
     (ws / ".gitignore").write_text("warehouse/*.duckdb\nwarehouse/*.duckdb.wal\nwarehouse/target/\n"
