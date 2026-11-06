@@ -2,7 +2,7 @@
 name = "dark-data-product-factory"
 version = "0.1.0"
 description = "Capstone: a dark factory for data products, built from Claude Agent SDK agents"
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 dependencies = [
     "claude-agent-sdk>=0.2.178",
     "dbt-core>=1.10,<2",
@@ -13,6 +13,8 @@ dependencies = [
     "pyyaml>=6",
     "click>=8.1",
     "rich>=13",
+    "checkup>=0.8",
+    "checkup-dbt>=0.5",
 ]
 
 [project.optional-dependencies]
@@ -20,6 +22,15 @@ dev = ["pytest>=8"]
 
 [project.scripts]
 factory = "factory.cli:main"
+
+[project.entry-points."checkup.metrics"]
+fernhill_gov001_mart_naming = "factory.checkup_plugin:Gov001NamingMetric"
+fernhill_gov002_model_description = "factory.checkup_plugin:Gov002DescriptionMetric"
+fernhill_gov003_column_description = "factory.checkup_plugin:Gov003ColumnDocsMetric"
+fernhill_gov004_grain = "factory.checkup_plugin:Gov004GrainMetric"
+fernhill_gov005_ownership = "factory.checkup_plugin:Gov005OwnershipMetric"
+fernhill_gov007_contract = "factory.checkup_plugin:Gov007ContractMetric"
+fernhill_gov009_layering = "factory.checkup_plugin:Gov009LayeringMetric"
 
 [build-system]
 requires = ["hatchling"]

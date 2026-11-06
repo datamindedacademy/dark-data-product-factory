@@ -35,7 +35,7 @@ prompt: prompt.md
 builtin_tools: [Read, Write, Edit, Glob, Grep, Bash]
 mcp:
   warehouse: [run_sql]         # + list_tables, describe_table
-  governance: [checkup]        # standards linter
+  governance: [checkup]        # runs `checkup run` (warehouse/checkup.yaml)
   dct: true                    # dbt charts' own MCP server
 skills: [dbt-duckdb]
 outputs: [output/spec.yaml]    # recorded as missing_outputs in the summary if absent

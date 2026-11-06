@@ -1,11 +1,16 @@
-"""`factory checkup`: a deterministic linter for the Fernhill data product standards.
+"""Mechanical checks of the Fernhill data product standards, run through checkup.
 
-It reads ``target/manifest.json`` (run ``dbt parse`` first) and checks the rules
-from ``standards/data-product-standards.md`` that can be verified mechanically.
+``check()`` is the rule logic: it reads ``target/manifest.json`` and returns
+violations of the rules in ``standards/data-product-standards.md`` that can be
+verified mechanically. It is exposed to checkup as metrics in
+``factory/checkup_plugin.py`` and configured in ``warehouse/checkup.yaml``, so
+the governance agent (and you) run the real thing::
+
+    cd warehouse && dbt parse && checkup run --tag data_product=category_performance
+
 Rules that need judgement (PII, naming of measures, business rules, dashboards)
 are left to the governance agent - that is the point of the governance track.
-
-    factory checkup --project warehouse --product category_performance
+``run()`` returns the same findings as structured JSON for tests and graders.
 """
 
 from __future__ import annotations
@@ -120,20 +125,36 @@ def run(project_dir: Path, product: str | None = None) -> dict:
     }
 
 
+def checkup_cli(project_dir: Path, product: str | None = None, materializer: str = "markdown"):
+    """Run ``checkup run`` in the dbt project (uses ``checkup.yaml`` there)."""
+    from factory import paths
+    from factory.workspace import sh
+
+    cmd = [paths.tool("checkup"), "run", "-q", "--no-multiprocessing", "--materializer", materializer]
+    if product:
+        cmd += ["--tag", f"data_product={product}"]
+    return sh(cmd, project_dir, check=False)
+
+
 def build_server(project_dir: Path):
-    """MCP server exposing the linter to agents."""
+    """MCP server exposing checkup to agents."""
     from factory.workspace import dbt  # local import to avoid a cycle
 
     @tool("checkup",
-          "Run the deterministic data-product standards linter on the dbt project and return "
-          "violations of GOV-001..005, 007 and 009 as JSON. Re-parses the project first. "
-          "Pass `product` to restrict to one data product (folder under models/marts/).",
+          "Run checkup (computational governance) on the dbt project with warehouse/checkup.yaml: "
+          "project health metrics from checkup-dbt plus one metric per mechanical Fernhill rule "
+          "(GOV-001..005, 007, 009; value = number of violations, diagnostics list model or model.column). "
+          "Re-parses the project first. Pass `product` to scope the Fernhill rules to one data product. "
+          "GOV-006, 008, 010 and 011 are not covered.",
           {"product": str})
     async def checkup(args: dict[str, Any]) -> dict[str, Any]:
         parsed = dbt(project_dir.parent, "parse", "--quiet")
         if parsed.returncode != 0:
             return {"content": [{"type": "text", "text": "dbt parse failed:\n" + parsed.stdout[-3000:]}], "is_error": True}
-        result = run(project_dir, args.get("product") or None)
-        return {"content": [{"type": "text", "text": json.dumps(result, indent=2)}]}
+        res = checkup_cli(project_dir, args.get("product") or None)
+        if res.returncode != 0 or not res.stdout.strip():
+            return {"content": [{"type": "text", "text": "checkup failed:\n" + (res.stdout + res.stderr)[-3000:]}],
+                    "is_error": True}
+        return {"content": [{"type": "text", "text": res.stdout}]}
 
     return create_sdk_mcp_server("governance", tools=[checkup])

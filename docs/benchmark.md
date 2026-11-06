@@ -43,7 +43,7 @@ weighted mean; the station score is the mean over cases.
 | Station | Graders (weight) |
 |---|---|
 | intake | spec valid (1), status ready / needs_clarification / infeasible (3), data traps found (3), question coverage (2), grounding: inputs exist and reference SQL runs (2), acceptance checks per question (2) or blocker explained (2); `--judge`: rubric (3) |
-| implement | dbt build (2), outputs match spec (2), visible acceptance checks (4), **hidden** acceptance checks (3), standards checkup (2) |
+| implement | dbt build (2), outputs match spec (2), visible acceptance checks (4), **hidden** acceptance checks (3), Fernhill checkup metrics clean (2) |
 | review | verdict (4), planted defect recall (3) or no false alarms on a clean PR (2), docs flag (1) |
 | governance | violation F1 on (rule, model) (5), recall on rules that need judgement (3), compliant flag (1) |
 | bi | `dct validate` (2), `dct render` (2), question coverage via query `notes` (3), reads product models (1); `--judge`: answers the questions (3) |
@@ -58,7 +58,7 @@ Good cases come from failures you saw in traces, not from imagination. Some patt
 
 - **Adversarial input.** An issue that sounds clear but asks for data that does not exist;
   a PR whose description claims tests that were removed; a governance case where the
-  linter is green but a human would object.
+  checkup is green but a human would object.
 - **Same skill, new surface.** A different product with the same trap (QA accounts,
   GBP, cancellations) tells you whether the agent learned the rule or the case.
 - **Clean controls.** For every "find the bug" case, have a clean one. Otherwise an

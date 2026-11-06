@@ -7,7 +7,7 @@ A **data product** is a set of mart models under `warehouse/models/marts/<produc
 that share `meta.data_product: <product_id>`, plus one dashboard board in
 `warehouse/charts/<product_id>.yml`.
 
-| ID | Rule | Checked by `factory checkup`? |
+| ID | Rule | Measured by checkup? |
 |----|------|------|
 | GOV-001 | Mart model names start with `fct_` (events/facts, one row per event or per period) or `dim_` (entities). | yes |
 | GOV-002 | Every mart model has a description of at least 30 characters that states its grain. | partly (length only) |
@@ -20,6 +20,13 @@ that share `meta.data_product: <product_id>`, plus one dashboard board in
 | GOV-009 | Mart models never select from `source()` directly; they build on staging (`stg_`) or other marts. | yes |
 | GOV-010 | Every data product has a dashboard board in `warehouse/charts/<product_id>.yml` that passes `dct validate`, and the board's queries read from the product's own mart models. | no – needs judgement |
 | GOV-011 | Business rules are applied consistently with the rest of the warehouse: cancelled orders are excluded from revenue, internal QA accounts (e-mail domain `fernhill.test`) are excluded from every customer-facing metric, and amounts in GBP are converted to EUR with `stg_fx_rates`. | no – needs judgement |
+
+Mechanical rules are measured by [checkup](https://pypi.org/project/checkup/) with the
+Fernhill plugin (`factory/checkup_plugin.py`, configured in `warehouse/checkup.yaml`):
+
+```bash
+cd warehouse && dbt parse && checkup run --tag data_product=<product_id>
+```
 
 ## Reporting violations
 

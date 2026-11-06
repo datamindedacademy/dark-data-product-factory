@@ -26,7 +26,7 @@ model and effort) and show the improvement with numbers.
 ## Quick start
 
 ```bash
-uv sync --extra dev          # Python 3.11+, installs dbt-duckdb, dbt charts, the Agent SDK
+uv sync --extra dev          # Python 3.12+, installs dbt-duckdb, dbt charts, checkup, the Agent SDK
 source .venv/bin/activate
 factory setup                # generates the warehouse and builds the dbt project (~10 s)
 pytest -q                    # checks the benchmark itself, no LLM calls (~5 min)

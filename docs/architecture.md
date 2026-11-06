@@ -74,8 +74,12 @@ benchmark adds `score` and `grades`. The line manager reads exactly these files.
 
 - `warehouse`: `run_sql` (read-only), `list_tables`, `describe_table` - bound to the
   workspace's DuckDB. Baselines only get `run_sql`.
-- `governance`: `checkup` - the deterministic standards linter (also `factory checkup`).
-  It checks GOV-001..005, 007 and 009 from `target/manifest.json`; the other rules need
-  judgement.
+- `governance`: `checkup` - runs [checkup](https://pypi.org/project/checkup/)
+  (`checkup run`, config in `warehouse/checkup.yaml`): project health metrics from the
+  checkup-dbt plugin plus one metric per mechanical Fernhill rule (GOV-001..005, 007, 009)
+  from our own plugin in `factory/checkup_plugin.py`, registered as `checkup.metrics` entry
+  points in `pyproject.toml`. `--tag data_product=<id>` scopes the Fernhill rules to one
+  product. Also available as `factory checkup [--product <id>] [--json]`. The other rules
+  need judgement.
 - `dct` (external): `dct mcp serve`, dbt charts' own MCP server with schema browsing,
   validation, rendering and its authoring skills.

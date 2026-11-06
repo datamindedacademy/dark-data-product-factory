@@ -141,3 +141,15 @@ def test_tracer_records_tools_and_cost(tmp_path):
     assert s["total_cost_usd"] == 0.12 and s["status"] == "ok"
     types = [json.loads(line)["type"] for line in (tmp_path / "trace.jsonl").read_text().splitlines()]
     assert types == ["init", "assistant_text", "tool_use", "tool_result", "result"]
+
+
+def test_checkup_tool_runs_real_checkup(tmp_path):
+    """The governance agent's tool shells out to `checkup run` with the Fernhill plugin."""
+    case = next(c for c in load_cases("governance") if c.id == "governance-02-mechanical")
+    ws = _ws(tmp_path)
+    STAGES["governance"].setup(case, ws)
+    res = checkup.checkup_cli(ws / "warehouse", "marketing_performance")
+    assert res.returncode == 0, res.stderr
+    assert "GOV-005: fct_marketing_channel_daily" in res.stdout
+    assert "GOV-009: fct_marketing_channel_daily" in res.stdout
+    assert "fernhill_gov001_mart_naming" in res.stdout

@@ -81,17 +81,20 @@ def accept(spec: Path, db: Path | None) -> None:
 
 @main.command()
 @click.option("--project", type=click.Path(exists=True, path_type=Path), default=paths.WAREHOUSE)
-@click.option("--product", default=None, help="Data product id (folder under models/marts/)")
-@click.option("--parse/--no-parse", default=True, help="Run dbt parse first")
-def checkup(project: Path, product: str | None, parse: bool) -> None:
-    """Lint data products against the mechanical standards (GOV-001..005, 007, 009)."""
+@click.option("--product", default=None, help="Data product id: scopes the Fernhill rules (--tag data_product=...)")
+@click.option("--json", "as_json", is_flag=True, help="Print the Fernhill rule violations as JSON instead")
+def checkup(project: Path, product: str | None, as_json: bool) -> None:
+    """Run checkup on the dbt project (dbt parse + `checkup run`, config in checkup.yaml)."""
     from factory.tools import checkup as ck
 
-    if parse:
-        workspace.sh([paths.tool("dbt"), "parse", "--quiet"], project)
-    result = ck.run(project, product)
-    console.print_json(json.dumps(result))
-    raise SystemExit(1 if result["violations"] else 0)
+    workspace.sh([paths.tool("dbt"), "parse", "--quiet"], project)
+    if as_json:
+        result = ck.run(project, product)
+        console.print_json(json.dumps(result))
+        raise SystemExit(1 if result["violations"] else 0)
+    res = ck.checkup_cli(project, product)
+    console.print(res.stdout, end="", markup=False, highlight=False)
+    raise SystemExit(res.returncode)
 
 
 # ------------------------------------------------------------------ run agents

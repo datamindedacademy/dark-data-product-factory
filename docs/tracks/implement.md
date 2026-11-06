@@ -12,7 +12,7 @@ factory bench run implement --repeat 3
 
 **Graded on** dbt build, outputs matching the spec, visible acceptance checks, **hidden**
 acceptance checks (not in the agent's spec - do you generalise or just pass the tests?)
-and the standards linter.
+and checkup (the Fernhill standards metrics).
 
 **Ideas to improve**
 - Enable and improve `skills/dbt-duckdb` (contract data types are the classic time sink).
