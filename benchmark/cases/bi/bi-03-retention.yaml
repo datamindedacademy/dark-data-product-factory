@@ -1,0 +1,7 @@
+id: bi-03-retention
+stage: bi
+description: Dashboard for retention cohorts (a triangle / heatmap is the natural form).
+tags: [dev]
+input:
+  spec: products/customer_retention/spec.yaml
+expected: {}

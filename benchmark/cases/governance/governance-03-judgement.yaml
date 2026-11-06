@@ -1,0 +1,16 @@
+id: governance-03-judgement
+stage: governance
+description: Passes checkup, but exposes untagged PII, a ratio without suffix, includes QA accounts and has no dashboard.
+tags: [dev]
+input:
+  product: customer_retention
+  overlay: fixtures/governance/judgement
+  board: false
+expected:
+  violations:
+    - {rule_id: GOV-006, model: dim_retention_customers}
+    - {rule_id: GOV-008, model: fct_customer_retention_monthly}
+    - {rule_id: GOV-010, model: customer_retention}
+    - {rule_id: GOV-011, model: fct_customer_retention_monthly}
+  acceptable_extra:
+    - [GOV-011, dim_retention_customers]

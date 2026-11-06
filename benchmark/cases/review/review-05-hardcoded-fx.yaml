@@ -1,0 +1,16 @@
+id: review-05-hardcoded-fx
+stage: review
+description: GBP refunds converted with a hard-coded 1.17 instead of the daily FX rate. Small numeric impact, real defect.
+tags: [dev]
+input:
+  product: category_performance
+  spec: products/category_performance/spec.yaml
+  pr: fixtures/review/prs/category_performance.md
+  overlay: fixtures/review/hardcoded_fx
+expected:
+  verdict: request_changes
+  defects:
+    - id: hardcoded_fx
+      category: correctness
+      file: warehouse/models/marts/category_performance/fct_category_revenue_monthly.sql
+      keywords: [hardcod, hard-cod, hard cod, "1.17", magic number, fixed rate, constant rate, static rate, fx_rate_to_eur, daily rate]

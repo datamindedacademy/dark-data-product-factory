@@ -1,0 +1,17 @@
+id: intake-01-category
+stage: intake
+description: Clear request (category net revenue & returns). Traps - QA accounts, cancellations, GBP, refunds.
+tags: [dev]
+input:
+  issue: products/category_performance/issue.md
+expected:
+  status: ready
+  oracle_spec: products/category_performance/spec.yaml
+  traps:
+    - {id: qa_accounts, keywords: [fernhill.test, qa account, test account, internal account, qa tester, test customer]}
+    - {id: cancelled_orders, keywords: [cancel]}
+    - {id: currency, keywords: [gbp, fx rate, fx_rate, exchange rate, currency conversion, converted to eur, convert]}
+    - {id: refunds, keywords: [refund]}
+  questions:
+    - {id: net_revenue_by_category_month, all_of: [[net revenue, net_revenue], [category], [month]]}
+    - {id: return_rate_by_category, all_of: [[return], [rate, share, percentage, "%"]]}

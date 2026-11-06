@@ -1,0 +1,12 @@
+id: review-01-clean
+stage: review
+description: Correct, well-documented implementation. Should be approved without blocker/major findings.
+tags: [dev]
+input:
+  product: category_performance
+  spec: products/category_performance/spec.yaml
+  pr: fixtures/review/prs/category_performance.md
+expected:
+  verdict: approve
+  docs_up_to_date: true
+  defects: []

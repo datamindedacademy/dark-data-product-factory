@@ -1,0 +1,30 @@
+id: line_manager-01-week
+stage: line_manager
+description: A synthetic week of ~120 runs with five planted recurring problems.
+tags: [dev]
+input:
+  generator: fixtures/line_manager/generate_runs.py
+  seed: 7
+expected:
+  max_recommendations: 10
+  patterns:
+    - id: implement_contract_types
+      targets: [implement]
+      all_of: [[contract, data_type, data type, hugeint, type mismatch]]
+      file: agents/implement/skills/dbt-duckdb/SKILL.md
+    - id: intake_schema_exploration
+      targets: [intake]
+      all_of: [[schema, describe, information_schema, explor, list_tables, describe_table, catalog]]
+      file: agents/intake/agent.yaml
+    - id: review_reads_everything
+      targets: [review]
+      all_of: [[diff], [read, file, context, token, cost]]
+      file: agents/review/prompt.md
+    - id: bi_kpi_syntax
+      targets: [bi]
+      all_of: [[validate, syntax, schema, extra-key, extra key, unknown key], [kpi, label, title, skill]]
+      file: agents/bi/agent.yaml
+    - id: governance_rework_shift_left
+      targets: [implement, governance, factory]
+      all_of: [[gov-005, gov-003, owner, description, rework, reject], [implement, shift, upstream, before, earlier, checkup]]
+      file: agents/implement/prompt.md

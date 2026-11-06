@@ -1,0 +1,8 @@
+id: implement-01-category
+stage: implement
+description: Implement category performance from the golden spec. Two checks are hidden from the agent.
+tags: [dev]
+input:
+  spec: products/category_performance/spec.yaml
+expected:
+  hidden_checks: [Q1.by_category_2024, Q3.share_tents_2025]

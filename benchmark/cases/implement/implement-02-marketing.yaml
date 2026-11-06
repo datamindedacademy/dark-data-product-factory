@@ -1,0 +1,8 @@
+id: implement-02-marketing
+stage: implement
+description: Implement marketing channel performance (daily x channel, sessions, conversions, spend).
+tags: [dev]
+input:
+  spec: products/marketing_performance/spec.yaml
+expected:
+  hidden_checks: [Q1.sessions_total, Q3.paid_search_cpo_2025]

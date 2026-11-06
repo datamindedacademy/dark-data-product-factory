@@ -1,0 +1,205 @@
+spec_version: 1
+id: category_performance
+title: Category performance (net revenue & returns)
+status: ready
+requested_by: Sofie Claes (Head of Merchandising)
+owner: analytics-engineering
+purpose: >
+  Give merchandising a trusted monthly view of what each product category really
+  earns after returns, across web, app and stores, in EUR, so that next season's
+  buying budget per category is based on net revenue and return behaviour instead
+  of a web-only Excel export.
+
+business_questions:
+  - id: Q1
+    question: What is the net revenue (after refunds) per product category per month?
+    why_it_matters: Budget allocation per category is proportional to net revenue.
+    metrics: [net_revenue_eur, sales_eur, refunds_eur]
+    dimensions: [month, category]
+    acceptance:
+      - id: Q1.total_2025
+        description: Total 2025 net revenue matches an independent computation from staging.
+        sql: |
+          select round(sum(net_revenue_eur), 0) as net_revenue_eur
+          from {{ ref('fct_category_revenue_monthly') }}
+          where month >= date '2025-01-01' and month < date '2026-01-01'
+        expect:
+          type: matches_reference
+          tolerance: 0.002
+          reference_sql: |
+            with cust as (select customer_id from stg_customers where email not like '%@fernhill.test'),
+            fx as (select rate_date, rate_to_eur from stg_fx_rates where currency = 'GBP'),
+            o as (
+              select o.order_id, case when o.currency = 'GBP' then fx.rate_to_eur else 1.0 end as rate
+              from stg_orders o
+              join cust using (customer_id)
+              left join fx on fx.rate_date = o.order_date
+              where not o.is_cancelled and o.order_date >= date '2025-01-01' and o.order_date < date '2026-01-01'
+            ),
+            r as (select order_item_id, sum(refund_local) as refund_local from stg_returns group by 1)
+            select round(sum((i.net_amount_local - coalesce(r.refund_local, 0)) * o.rate), 0)
+            from stg_order_items i join o using (order_id) left join r using (order_item_id)
+      - id: Q1.by_category_2024
+        description: 2024 net revenue per category matches the reference.
+        sql: |
+          select category, round(sum(net_revenue_eur), -2) as net_revenue_eur
+          from {{ ref('fct_category_revenue_monthly') }}
+          where year(month) = 2024
+          group by 1 order by 1
+        expect:
+          type: matches_reference
+          tolerance: 0.005
+          ordered: true
+          reference_sql: |
+            with cust as (select customer_id from stg_customers where email not like '%@fernhill.test'),
+            fx as (select rate_date, rate_to_eur from stg_fx_rates where currency = 'GBP'),
+            o as (
+              select o.order_id, case when o.currency = 'GBP' then fx.rate_to_eur else 1.0 end as rate
+              from stg_orders o join cust using (customer_id) left join fx on fx.rate_date = o.order_date
+              where not o.is_cancelled and year(o.order_date) = 2024
+            ),
+            r as (select order_item_id, sum(refund_local) as refund_local from stg_returns group by 1)
+            select p.category, round(sum((i.net_amount_local - coalesce(r.refund_local, 0)) * o.rate), -2)
+            from stg_order_items i join o using (order_id) join stg_products p using (product_id)
+            left join r using (order_item_id)
+            group by 1 order by 1
+      - id: Q1.grain
+        description: One row per month and category (24 months x 6 categories).
+        sql: select count(*) as n, count(distinct month || category) as n_distinct from {{ ref('fct_category_revenue_monthly') }}
+        expect:
+          type: matches_reference
+          reference_sql: select 144, 144
+  - id: Q2
+    question: Which categories have the highest return rate, and how does it evolve over time?
+    why_it_matters: High-return categories carry hidden logistics cost; buyers want to cut return-prone lines.
+    metrics: [return_rate, units_returned, units_sold]
+    dimensions: [month, category]
+    acceptance:
+      - id: Q2.top_return_rate_2025
+        description: Category with the highest unit return rate in 2025.
+        sql: |
+          select category
+          from {{ ref('fct_category_revenue_monthly') }}
+          where year(month) = 2025
+          group by 1
+          order by sum(units_returned) / sum(units_sold) desc
+          limit 1
+        expect:
+          type: equals
+          value: Footwear
+      - id: Q2.return_rate_2025_apparel
+        description: Apparel unit return rate in 2025.
+        sql: |
+          select round(sum(units_returned) / sum(units_sold), 3)
+          from {{ ref('fct_category_revenue_monthly') }}
+          where year(month) = 2025 and category = 'Apparel'
+        expect:
+          type: matches_reference
+          tolerance: 0.01
+          reference_sql: |
+            with cust as (select customer_id from stg_customers where email not like '%@fernhill.test'),
+            i as (
+              select i.order_item_id, i.quantity
+              from stg_order_items i join stg_orders o using (order_id) join cust using (customer_id)
+              join stg_products p using (product_id)
+              where not o.is_cancelled and year(o.order_date) = 2025 and p.category = 'Apparel'
+            )
+            select round(coalesce(sum(r.returned_quantity), 0) / sum(i.quantity), 3)
+            from i left join stg_returns r using (order_item_id)
+  - id: Q3
+    question: How is the category mix (share of total net revenue) shifting from 2024 to 2025?
+    why_it_matters: Shows which categories are growing in importance for the buying plan.
+    metrics: [net_revenue_eur]
+    dimensions: [year, category]
+    acceptance:
+      - id: Q3.share_tents_2025
+        description: Share of 2025 net revenue coming from Tents.
+        sql: |
+          select round(sum(case when category = 'Tents' then net_revenue_eur end) / sum(net_revenue_eur), 3)
+          from {{ ref('fct_category_revenue_monthly') }}
+          where year(month) = 2025
+        expect:
+          type: matches_reference
+          tolerance: 0.01
+          reference_sql: |
+            with cust as (select customer_id from stg_customers where email not like '%@fernhill.test'),
+            fx as (select rate_date, rate_to_eur from stg_fx_rates where currency = 'GBP'),
+            o as (
+              select o.order_id, case when o.currency = 'GBP' then fx.rate_to_eur else 1.0 end as rate
+              from stg_orders o join cust using (customer_id) left join fx on fx.rate_date = o.order_date
+              where not o.is_cancelled and year(o.order_date) = 2025
+            ),
+            r as (select order_item_id, sum(refund_local) as refund_local from stg_returns group by 1),
+            x as (
+              select p.category, (i.net_amount_local - coalesce(r.refund_local, 0)) * o.rate as nr
+              from stg_order_items i join o using (order_id) join stg_products p using (product_id)
+              left join r using (order_item_id)
+            )
+            select round(sum(case when category = 'Tents' then nr end) / sum(nr), 3) from x
+
+metrics:
+  - name: sales_eur
+    definition: Item revenue after discounts and before returns, excluding shipping, in EUR.
+    expression: sum(unit_price * quantity - discount) * fx_rate_to_eur
+  - name: refunds_eur
+    definition: Refund amount of returned units, converted at the FX rate of the original order date, attributed to the order month.
+  - name: net_revenue_eur
+    definition: sales_eur - refunds_eur
+  - name: return_rate
+    definition: Units returned / units sold, as a fraction between 0 and 1.
+
+inputs:
+  - name: fct_order_items
+    columns: [order_item_id, order_id, customer_id, product_id, order_date, is_cancelled, quantity, net_amount_eur]
+  - name: fct_orders
+    columns: [order_id, fx_rate_to_eur]
+  - name: dim_products
+    columns: [product_id, category]
+  - name: dim_customers
+    columns: [customer_id, email]
+    notes: Only used to exclude internal QA accounts.
+  - name: stg_returns
+    columns: [order_item_id, returned_quantity, refund_local]
+
+data_quality_notes:
+  - issue: raw.orders contains replayed ingestion rows (duplicate order_id).
+    handling: Already deduplicated in stg_orders; build on staging/core models, never on raw.
+  - issue: Internal QA accounts (e-mail domain fernhill.test) place real-looking orders.
+    handling: Exclude customers whose e-mail ends in @fernhill.test.
+  - issue: Cancelled orders are present in orders and order items.
+    handling: Exclude is_cancelled orders from all metrics.
+  - issue: UK orders are in GBP; refunds are in the order currency.
+    handling: Use fct_order_items EUR amounts; convert refunds with fct_orders.fx_rate_to_eur.
+  - issue: Product categories are inconsistently cased in raw.products.
+    handling: Use the normalised category from dim_products.
+  - issue: Returns arrive up to 40 days after the order.
+    handling: Attribute refunds to the order month; the latest month's net revenue will still move.
+
+outputs:
+  - name: fct_category_revenue_monthly
+    description: One row per order month (UTC) and product category with sales, refunds, net revenue and return rate in EUR.
+    grain: [month, category]
+    columns:
+      - {name: month, data_type: date, description: First day of the order month (UTC), tests: [not_null]}
+      - {name: category, data_type: varchar, description: Normalised product category, tests: [not_null]}
+      - {name: orders, data_type: bigint, description: Distinct non-cancelled orders with the category}
+      - {name: units_sold, data_type: bigint, description: Units sold}
+      - {name: units_returned, data_type: bigint, description: "Units returned, attributed to order month"}
+      - {name: sales_eur, data_type: double, description: "Sales after discounts, before returns"}
+      - {name: refunds_eur, data_type: double, description: Refunds in EUR}
+      - {name: net_revenue_eur, data_type: double, description: sales_eur - refunds_eur}
+      - {name: return_rate, data_type: double, description: units_returned / units_sold, tests: [accepted_range]}
+
+dashboard:
+  title: Category performance
+  audience: Merchandising team, monthly assortment review
+  charts:
+    - "KPI tiles: 2025 net revenue and 2025 return rate (Q1, Q2)"
+    - "Line chart: monthly net revenue per category (Q1)"
+    - "Bar chart: return rate per category for 2025, sorted descending (Q2)"
+    - "Stacked bar: share of net revenue per category, 2024 vs 2025 (Q3)"
+
+assumptions:
+  - Month is based on the order date in UTC; finance's Brussels-time cut-off differs for a handful of orders around midnight.
+  - Shipping fees are not revenue for merchandising purposes.
+open_questions: []

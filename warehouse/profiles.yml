@@ -1,0 +1,10 @@
+# DuckDB profile. dbt picks this file up because it sits in the project dir.
+# DBT_DUCKDB_PATH lets the factory point a workspace at its own copy of the db.
+fernhill:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: "{{ env_var('DBT_DUCKDB_PATH', 'warehouse.duckdb') }}"
+      schema: main
+      threads: 4

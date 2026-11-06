@@ -1,0 +1,8 @@
+id: implement-03-retention
+stage: implement
+description: Implement the retention cohort triangle (needs a month spine for inactive months).
+tags: [dev]
+input:
+  spec: products/customer_retention/spec.yaml
+expected:
+  hidden_checks: [Q3.store_m3_2024]

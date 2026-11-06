@@ -1,0 +1,3 @@
+# dbt charts project configuration. Boards live in charts/.
+# Inside a dbt project no `sources:` are needed: SQL runs against the
+# connection of the `fernhill` profile in profiles.yml (DuckDB).

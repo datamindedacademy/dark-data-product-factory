@@ -1,0 +1,10 @@
+id: intake-05-nps-infeasible
+stage: intake
+description: NPS per segment - there is no survey data at all. The agent must not fabricate a product.
+tags: [dev]
+input:
+  issue: products/customer_nps/issue.md
+expected:
+  status: [infeasible, needs_clarification]
+  oracle_spec: products/customer_nps/oracle_spec.yaml
+  reason_keywords: [no survey, not available, no nps, does not exist, not exist, no data, "doesn't exist", missing, not present, no table, no such]

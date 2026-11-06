@@ -1,0 +1,94 @@
+version: 2
+
+models:
+  - name: fct_orders
+    description: >
+      One row per order (deduplicated). Includes cancelled orders (filter on
+      is_cancelled) and all customers. Amounts are converted to EUR using the
+      daily FX rate of the order date.
+    config:
+      contract: {enforced: true}
+      meta:
+        owner: analytics-engineering
+        data_product: core
+        grain: [order_id]
+    columns:
+      - {name: order_id, data_type: varchar, description: Order identifier., data_tests: [unique, not_null]}
+      - {name: customer_id, data_type: varchar, description: Customer who placed the order., data_tests: [not_null]}
+      - {name: ordered_at, data_type: timestamp, description: Order timestamp (UTC).}
+      - {name: order_date, data_type: date, description: Order date (UTC).}
+      - {name: channel, data_type: varchar, description: "Sales channel: web, app or store."}
+      - {name: store_id, data_type: varchar, description: Store for in-store orders, null otherwise.}
+      - {name: status, data_type: varchar, description: "placed, shipped, delivered or cancelled."}
+      - {name: is_cancelled, data_type: boolean, description: True when status = cancelled.}
+      - {name: currency, data_type: varchar, description: Currency the customer paid in (EUR or GBP).}
+      - {name: fx_rate_to_eur, data_type: double, description: Rate used to convert to EUR (1.0 for EUR orders).}
+      - {name: units, data_type: hugeint, description: Total units on the order.}
+      - {name: gross_amount_eur, data_type: double, description: Sum of unit price x quantity before discounts, in EUR.}
+      - {name: discount_eur, data_type: double, description: Total discount on the order, in EUR.}
+      - {name: net_amount_eur, data_type: double, description: Gross minus discounts in EUR, excluding shipping and before returns.}
+      - {name: shipping_fee_eur, data_type: double, description: Shipping fee charged, in EUR.}
+
+  - name: fct_order_items
+    description: >
+      One row per order line with EUR amounts and order attributes denormalised.
+      Returns are not included; join stg_returns on order_item_id.
+    config:
+      contract: {enforced: true}
+      meta:
+        owner: analytics-engineering
+        data_product: core
+        grain: [order_item_id]
+    columns:
+      - {name: order_item_id, data_type: varchar, description: Order line identifier., data_tests: [unique, not_null]}
+      - {name: order_id, data_type: varchar, description: Parent order.}
+      - {name: customer_id, data_type: varchar, description: Customer who placed the order.}
+      - {name: product_id, data_type: varchar, description: Product sold.}
+      - {name: ordered_at, data_type: timestamp, description: Order timestamp (UTC).}
+      - {name: order_date, data_type: date, description: Order date (UTC).}
+      - {name: channel, data_type: varchar, description: "Sales channel: web, app or store."}
+      - {name: status, data_type: varchar, description: Order status.}
+      - {name: is_cancelled, data_type: boolean, description: True when the parent order is cancelled.}
+      - {name: quantity, data_type: integer, description: Units ordered.}
+      - {name: unit_price_eur, data_type: double, description: Unit price in EUR.}
+      - {name: discount_eur, data_type: double, description: Line discount in EUR.}
+      - {name: net_amount_eur, data_type: double, description: unit_price x quantity - discount, in EUR.}
+
+  - name: dim_customers
+    description: One row per customer account, with first/last non-cancelled order and lifetime order count.
+    config:
+      contract: {enforced: true}
+      meta:
+        owner: analytics-engineering
+        data_product: core
+        grain: [customer_id]
+    columns:
+      - {name: customer_id, data_type: varchar, description: Customer identifier., data_tests: [unique, not_null]}
+      - {name: first_name, data_type: varchar, description: First name., meta: {pii: true}}
+      - {name: last_name, data_type: varchar, description: Last name., meta: {pii: true}}
+      - {name: email, data_type: varchar, description: Login e-mail address (lower case)., meta: {pii: true}}
+      - {name: country_code, data_type: varchar, description: ISO-2 country of the account.}
+      - {name: signed_up_at, data_type: timestamp, description: Account creation timestamp (UTC).}
+      - {name: marketing_opt_in, data_type: boolean, description: Customer accepted marketing e-mails.}
+      - {name: first_ordered_at, data_type: timestamp, description: First non-cancelled order timestamp.}
+      - {name: last_ordered_at, data_type: timestamp, description: Most recent non-cancelled order timestamp.}
+      - {name: lifetime_orders, data_type: bigint, description: Number of non-cancelled orders.}
+
+  - name: dim_products
+    description: One row per product in the catalogue with normalised category.
+    config:
+      contract: {enforced: true}
+      meta:
+        owner: analytics-engineering
+        data_product: core
+        grain: [product_id]
+    columns:
+      - {name: product_id, data_type: varchar, description: Product identifier., data_tests: [unique, not_null]}
+      - {name: sku, data_type: varchar, description: Stock keeping unit.}
+      - {name: product_name, data_type: varchar, description: Display name.}
+      - {name: category, data_type: varchar, description: Normalised product category.}
+      - {name: subcategory, data_type: varchar, description: Product subcategory.}
+      - {name: list_price_eur, data_type: double, description: Current list price in EUR.}
+      - {name: unit_cost_eur, data_type: double, description: Unit cost in EUR.}
+      - {name: launched_at, data_type: date, description: Date the product went on sale.}
+      - {name: is_active, data_type: boolean, description: Still sold.}

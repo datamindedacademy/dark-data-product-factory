@@ -1,0 +1,16 @@
+description: >
+  Turns the purpose and business questions of a data product into a dbt charts
+  dashboard (board YAML) on top of the product's mart models.
+model: default
+effort: medium
+max_turns: 60
+max_budget_usd: 3.0
+system_prompt: system_prompt.md
+system_prompt_mode: replace
+prompt: prompt.md
+builtin_tools: [Read, Write, Edit, Glob, Grep, Bash]
+mcp:
+  warehouse: [run_sql]
+  # dct: true               # dbt charts' own MCP server (schema browsing, validate, render)
+skills: []                  # try installing the official skill: `dct skills chart`
+outputs: [warehouse/charts/$product_id.yml]

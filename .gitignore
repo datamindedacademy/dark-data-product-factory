@@ -1,0 +1,16 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+# generated warehouse + dbt artefacts
+warehouse/*.duckdb
+warehouse/*.duckdb.wal
+warehouse/target/
+warehouse/logs/
+warehouse/dbt_packages/
+warehouse/renders/
+# agent + benchmark runs
+runs/
+benchmark/results/*
+!benchmark/results/.gitkeep
+.dct/

@@ -1,0 +1,7 @@
+id: bi-01-category
+stage: bi
+description: Dashboard for category performance on the built fct_category_revenue_monthly.
+tags: [dev]
+input:
+  spec: products/category_performance/spec.yaml
+expected: {}

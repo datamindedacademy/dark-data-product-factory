@@ -1,0 +1,21 @@
+name: Data product request
+description: Ask the data team (and its factory line) for a new data product.
+title: "Data product: "
+labels: [data-product-request]
+body:
+  - type: textarea
+    id: need
+    attributes:
+      label: What do you need?
+      description: The decision you want to take or the question you want answered. Not the chart you have in mind.
+    validations:
+      required: true
+  - type: textarea
+    id: users
+    attributes:
+      label: Who will use it, and how often?
+  - type: textarea
+    id: context
+    attributes:
+      label: Anything else?
+      description: Known data sources, definitions you use today, deadlines.

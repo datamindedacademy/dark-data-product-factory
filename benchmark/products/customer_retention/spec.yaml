@@ -1,0 +1,136 @@
+spec_version: 1
+id: customer_retention
+title: Customer retention cohorts
+status: ready
+requested_by: Lotte Janssens (CRM Manager)
+owner: analytics-engineering
+purpose: >
+  Quantify how many new customers Fernhill acquires each month and what share of
+  them buy again in the following months, split by the channel of their first
+  purchase, to build the business case for a loyalty programme.
+
+business_questions:
+  - id: Q1
+    question: How many new customers do we acquire per month?
+    metrics: [cohort_customers]
+    dimensions: [cohort_month, first_order_channel]
+    acceptance:
+      - id: Q1.new_customers_2025
+        description: Customers whose first non-cancelled order was in 2025 (QA accounts excluded).
+        sql: |
+          select sum(cohort_customers) from {{ ref('fct_customer_retention_monthly') }}
+          where months_since_first_order = 0 and year(cohort_month) = 2025
+        expect:
+          type: matches_reference
+          tolerance: 0
+          reference_sql: |
+            select count(*) from (
+              select o.customer_id, min(o.order_date) as first_date
+              from stg_orders o join stg_customers c using (customer_id)
+              where not o.is_cancelled and c.email not like '%@fernhill.test'
+              group by 1
+            ) where year(first_date) = 2025
+  - id: Q2
+    question: What share of each monthly cohort places another order 1, 2, 3 ... months after their first order?
+    metrics: [active_customers, retention_rate]
+    dimensions: [cohort_month, months_since_first_order]
+    acceptance:
+      - id: Q2.m3_retention_2024
+        description: Customer-weighted month-3 retention of the 2024 cohorts.
+        sql: |
+          select round(sum(active_customers) / sum(cohort_customers), 3)
+          from {{ ref('fct_customer_retention_monthly') }}
+          where months_since_first_order = 3 and year(cohort_month) = 2024
+        expect:
+          type: matches_reference
+          tolerance: 0.01
+          reference_sql: |
+            with o as (
+              select o.customer_id, o.ordered_at, cast(date_trunc('month', o.order_date) as date) as m
+              from stg_orders o join stg_customers c using (customer_id)
+              where not o.is_cancelled and c.email not like '%@fernhill.test'
+            ),
+            f as (select customer_id, min(m) as cohort from o group by 1),
+            act as (select distinct f.customer_id from f join o using (customer_id) where o.m = f.cohort + interval 3 month)
+            select round(count(act.customer_id) / count(*), 3)
+            from f left join act using (customer_id) where year(f.cohort) = 2024
+      - id: Q2.month0_is_full
+        description: Month 0 retention is 100% by definition.
+        sql: select min(retention_rate) from {{ ref('fct_customer_retention_monthly') }} where months_since_first_order = 0
+        expect: {type: equals, value: 1.0}
+      - id: Q2.triangle_complete
+        description: Every cohort has a row for every month up to Dec 2025, also when nobody bought (Jan 2024 web cohort has months 0..23).
+        sql: |
+          select count(*) from {{ ref('fct_customer_retention_monthly') }}
+          where cohort_month = date '2024-01-01' and first_order_channel = 'web'
+        expect: {type: equals, value: 24}
+  - id: Q3
+    question: Do customers who first bought in a store retain better than those who started on the web or in the app?
+    metrics: [retention_rate]
+    dimensions: [first_order_channel, months_since_first_order]
+    acceptance:
+      - id: Q3.store_m3_2024
+        description: Month-3 retention of 2024 store-acquired customers.
+        sql: |
+          select round(sum(active_customers) / sum(cohort_customers), 3)
+          from {{ ref('fct_customer_retention_monthly') }}
+          where months_since_first_order = 3 and year(cohort_month) = 2024 and first_order_channel = 'store'
+        expect:
+          type: matches_reference
+          tolerance: 0.01
+          reference_sql: |
+            with o as (
+              select o.customer_id, o.ordered_at, o.channel, cast(date_trunc('month', o.order_date) as date) as m
+              from stg_orders o join stg_customers c using (customer_id)
+              where not o.is_cancelled and c.email not like '%@fernhill.test'
+            ),
+            f as (select customer_id, min(m) as cohort, arg_min(channel, ordered_at) as ch from o group by 1),
+            act as (select distinct f.customer_id from f join o using (customer_id) where o.m = f.cohort + interval 3 month)
+            select round(count(act.customer_id) / count(*), 3)
+            from f left join act using (customer_id) where year(f.cohort) = 2024 and f.ch = 'store'
+
+metrics:
+  - name: cohort_customers
+    definition: Customers whose first non-cancelled order falls in the cohort month.
+  - name: active_customers
+    definition: Cohort customers with at least one non-cancelled order in the activity month.
+  - name: retention_rate
+    definition: active_customers / cohort_customers. Aggregate as ratio of sums (customer-weighted), never average rates.
+
+inputs:
+  - {name: fct_orders, columns: [order_id, customer_id, ordered_at, order_date, channel, is_cancelled]}
+  - {name: dim_customers, columns: [customer_id, email], notes: Used to exclude internal QA accounts.}
+
+data_quality_notes:
+  - issue: Internal QA accounts (fernhill.test) order very frequently and would inflate retention.
+    handling: Exclude them.
+  - issue: Cancelled orders.
+    handling: Neither a cancelled first order nor a cancelled repeat order counts.
+  - issue: signed_up_at is not the acquisition date; many accounts never order.
+    handling: Cohorts are based on the first non-cancelled order, not signup.
+  - issue: Recent cohorts have few observable months.
+    handling: The triangle only contains months up to the last month with data (Dec 2025).
+
+outputs:
+  - name: fct_customer_retention_monthly
+    description: One row per cohort month, first-order channel and months since first order with cohort size, active customers and retention rate.
+    grain: [cohort_month, first_order_channel, months_since_first_order]
+    columns:
+      - {name: cohort_month, data_type: date, description: Month of first non-cancelled order, tests: [not_null]}
+      - {name: first_order_channel, data_type: varchar, description: Channel of the first order, tests: [not_null]}
+      - {name: months_since_first_order, data_type: integer, description: Months between cohort and activity month, tests: [not_null]}
+      - {name: cohort_customers, data_type: bigint, description: Customers in the cohort}
+      - {name: active_customers, data_type: bigint, description: Customers active in the month}
+      - {name: retention_rate, data_type: double, description: active / cohort, tests: [accepted_range]}
+
+dashboard:
+  title: Customer retention
+  audience: CRM team, loyalty programme business case
+  charts:
+    - "Bar chart: new customers per month by first-order channel (Q1)"
+    - "Heatmap: cohort month x months since first order, coloured by retention rate (Q2)"
+    - "Line chart: retention curve per first-order channel (Q3)"
+
+assumptions:
+  - Months are calendar months in UTC.
+open_questions: []

@@ -1,0 +1,169 @@
+spec_version: 1
+id: marketing_performance
+title: Marketing channel performance
+status: ready
+requested_by: Jonas Wouters (Performance Marketing Lead)
+owner: analytics-engineering
+purpose: >
+  Show performance marketing, per traffic channel and day, how much traffic each
+  channel brings, how well it converts into (non-cancelled) orders and - for paid
+  channels - the return on ad spend, so the team can decide whether the 2025 push
+  on social advertising pays off and rebalance budget between channels.
+
+business_questions:
+  - id: Q1
+    question: How many sessions does each traffic channel bring and what is its conversion rate, per month?
+    metrics: [sessions, orders, conversion_rate]
+    dimensions: [month, channel]
+    acceptance:
+      - id: Q1.social_cr_2025
+        description: Social conversion rate in 2025 (ratio of sums).
+        sql: |
+          select round(sum(orders) / sum(sessions), 4)
+          from {{ ref('fct_marketing_channel_daily') }}
+          where channel = 'social' and year(date) = 2025
+        expect:
+          type: matches_reference
+          tolerance: 0.01
+          reference_sql: |
+            with qa as (select customer_id from stg_customers where email like '%@fernhill.test'),
+            s as (
+              select s.*, o.order_id as ok_order
+              from stg_web_sessions s
+              left join stg_orders o on o.order_id = s.converted_order_id and not o.is_cancelled
+              where s.traffic_source = 'social' and year(s.session_date) = 2025
+                and (s.customer_id is null or s.customer_id not in (select customer_id from qa))
+            )
+            select round(count(ok_order) / count(*), 4) from s
+      - id: Q1.sessions_total
+        description: Total sessions across the whole period, excluding QA accounts.
+        sql: select sum(sessions) from {{ ref('fct_marketing_channel_daily') }}
+        expect:
+          type: matches_reference
+          tolerance: 0.0005
+          reference_sql: |
+            select count(*) from stg_web_sessions
+            where customer_id is null
+               or customer_id not in (select customer_id from stg_customers where email like '%@fernhill.test')
+      - id: Q1.grain
+        description: One row per day and channel.
+        sql: select count(*) = count(distinct cast(date as varchar) || channel) from {{ ref('fct_marketing_channel_daily') }}
+        expect: {type: equals, value: true}
+  - id: Q2
+    question: What is the return on ad spend (attributed net revenue / spend) of each paid channel, and how did it change from 2024 to 2025?
+    metrics: [net_revenue_eur, spend_eur, roas]
+    dimensions: [year, channel]
+    acceptance:
+      - id: Q2.social_roas_2025
+        description: Social ROAS in 2025.
+        sql: |
+          select round(sum(net_revenue_eur) / sum(spend_eur), 2)
+          from {{ ref('fct_marketing_channel_daily') }}
+          where channel = 'social' and year(date) = 2025
+        expect:
+          type: matches_reference
+          tolerance: 0.01
+          reference_sql: |
+            with qa as (select customer_id from stg_customers where email like '%@fernhill.test'),
+            fx as (select rate_date, rate_to_eur from stg_fx_rates),
+            rev as (
+              select sum(i.net_amount_local * case when o.currency = 'GBP' then fx.rate_to_eur else 1 end) as r
+              from stg_web_sessions s
+              join stg_orders o on o.order_id = s.converted_order_id and not o.is_cancelled
+              join stg_order_items i on i.order_id = o.order_id
+              left join fx on fx.rate_date = o.order_date
+              where s.traffic_source = 'social' and year(s.session_date) = 2025
+                and (s.customer_id is null or s.customer_id not in (select customer_id from qa))
+            ),
+            sp as (select sum(spend_eur) as sp from stg_marketing_spend where channel = 'social' and year(spend_date) = 2025)
+            select round(r / sp, 2) from rev, sp
+      - id: Q2.lowest_roas_paid_2025
+        description: Paid channel with the lowest ROAS in 2025.
+        sql: |
+          select channel from {{ ref('fct_marketing_channel_daily') }}
+          where year(date) = 2025 and spend_eur > 0
+          group by 1 order by sum(net_revenue_eur) / sum(spend_eur) asc limit 1
+        expect: {type: equals, value: social}
+  - id: Q3
+    question: What does an order cost us in marketing spend per paid channel (cost per order)?
+    metrics: [cost_per_order_eur]
+    dimensions: [month, channel]
+    acceptance:
+      - id: Q3.paid_search_cpo_2025
+        description: Paid search cost per order in 2025.
+        sql: |
+          select round(sum(spend_eur) / sum(orders), 1)
+          from {{ ref('fct_marketing_channel_daily') }}
+          where channel = 'paid_search' and year(date) = 2025
+        expect:
+          type: matches_reference
+          tolerance: 0.01
+          reference_sql: |
+            with qa as (select customer_id from stg_customers where email like '%@fernhill.test'),
+            o as (
+              select count(*) as n from stg_web_sessions s
+              join stg_orders o on o.order_id = s.converted_order_id and not o.is_cancelled
+              where s.traffic_source = 'paid_search' and year(s.session_date) = 2025
+                and (s.customer_id is null or s.customer_id not in (select customer_id from qa))
+            ),
+            sp as (select sum(spend_eur) as sp from stg_marketing_spend where channel = 'paid_search' and year(spend_date) = 2025)
+            select round(sp / n, 1) from o, sp
+
+metrics:
+  - name: conversion_rate
+    definition: Sessions that placed a non-cancelled order / all sessions. Ratio of sums at the reporting grain.
+  - name: net_revenue_eur
+    definition: Net amount (after discount, before returns, excluding shipping) of orders placed by the channel's sessions, in EUR.
+  - name: roas
+    definition: sum(net_revenue_eur) / sum(spend_eur) for paid channels; undefined for organic and referral.
+  - name: cost_per_order_eur
+    definition: sum(spend_eur) / sum(orders) for paid channels.
+
+inputs:
+  - {name: stg_web_sessions, columns: [session_id, customer_id, session_date, traffic_source, converted_order_id]}
+  - {name: fct_orders, columns: [order_id, is_cancelled, net_amount_eur]}
+  - {name: stg_marketing_spend, columns: [spend_date, channel, spend_eur]}
+  - {name: dim_customers, columns: [customer_id, email], notes: Used to exclude internal QA accounts.}
+
+data_quality_notes:
+  - issue: Most sessions are anonymous (customer_id null).
+    handling: Keep anonymous sessions; only exclude sessions explicitly belonging to QA accounts.
+  - issue: Internal QA accounts (fernhill.test) place test orders through web and app.
+    handling: Exclude their sessions and orders.
+  - issue: Some converted orders were later cancelled.
+    handling: A session only counts as converted when its order is not cancelled.
+  - issue: Organic and referral have no spend; ROAS is undefined, not zero or infinite.
+    handling: spend_eur = 0 and is_paid_channel = false; compute ROAS only for paid channels.
+  - issue: Averaging daily ratios gives wrong monthly numbers.
+    handling: Store additive measures; compute ratios as ratio of sums in the dashboard.
+  - issue: GBP orders.
+    handling: Use fct_orders.net_amount_eur which is already converted.
+
+outputs:
+  - name: fct_marketing_channel_daily
+    description: One row per session date and traffic channel with sessions, converted orders, attributed net revenue and spend in EUR.
+    grain: [date, channel]
+    columns:
+      - {name: date, data_type: date, description: Session date (UTC), tests: [not_null]}
+      - {name: channel, data_type: varchar, description: Traffic source, tests: [not_null, accepted_values]}
+      - {name: sessions, data_type: bigint, description: Sessions}
+      - {name: orders, data_type: bigint, description: Sessions that placed a non-cancelled order}
+      - {name: conversion_rate, data_type: double, description: orders / sessions, tests: [accepted_range]}
+      - {name: net_revenue_eur, data_type: double, description: Attributed net revenue in EUR}
+      - {name: spend_eur, data_type: double, description: Paid spend in EUR (0 for unpaid channels)}
+      - {name: is_paid_channel, data_type: boolean, description: Channel has spend}
+
+dashboard:
+  title: Marketing channel performance
+  audience: Performance marketing team, weekly
+  charts:
+    - "KPI tiles: 2025 ROAS for paid search and social (Q2)"
+    - "Line chart: monthly conversion rate per channel (Q1)"
+    - "Bar chart: sessions per channel per month (Q1)"
+    - "Bar chart: ROAS per paid channel, 2024 vs 2025 (Q2)"
+    - "Table: cost per order per paid channel per month (Q3)"
+
+assumptions:
+  - "Last-touch attribution: the session that placed the order gets all of its revenue."
+  - Revenue is before returns; marketing wants the order value at the time of conversion.
+open_questions: []

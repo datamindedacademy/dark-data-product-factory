@@ -1,0 +1,54 @@
+version: 2
+
+models:
+  - name: stg_orders
+    description: Orders, deduplicated to one row per order_id. Still contains cancelled orders and QA accounts.
+    columns:
+      - name: order_id
+        data_tests: [unique, not_null]
+      - name: order_date
+        description: Date part of ordered_at (UTC).
+      - name: is_cancelled
+      - name: currency
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [EUR, GBP]
+  - name: stg_order_items
+    description: Order lines. Amounts in the order currency (*_local).
+    columns:
+      - name: order_item_id
+        data_tests: [unique, not_null]
+      - name: net_amount_local
+        description: unit_price * quantity - discount, in order currency.
+  - name: stg_products
+    description: Products with normalised category names.
+    columns:
+      - name: product_id
+        data_tests: [unique, not_null]
+      - name: category
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [Tents, Sleeping Bags, Backpacks, Footwear, Apparel, Camping Kitchen]
+  - name: stg_customers
+    columns:
+      - name: customer_id
+        data_tests: [unique, not_null]
+  - name: stg_stores
+    columns:
+      - name: store_id
+        data_tests: [unique, not_null]
+  - name: stg_returns
+    description: Returned order lines; refund in order currency.
+    columns:
+      - name: return_id
+        data_tests: [unique, not_null]
+  - name: stg_fx_rates
+    description: Daily rates to EUR for non-EUR currencies (GBP only). EUR has no rows - use 1.0.
+  - name: stg_web_sessions
+    columns:
+      - name: session_id
+        data_tests: [unique, not_null]
+  - name: stg_marketing_spend
+    description: Daily paid spend per channel (paid_search, social, email) in EUR.
