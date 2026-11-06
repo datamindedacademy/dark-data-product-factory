@@ -2,7 +2,7 @@
 name = "dark-data-product-factory"
 version = "0.1.0"
 description = "Capstone: a dark factory for data products, built from Claude Agent SDK agents"
-requires-python = ">=3.12"
+requires-python = ">=3.15"
 dependencies = [
     "claude-agent-sdk>=0.2.178",
     "dbt-core>=1.10,<2",

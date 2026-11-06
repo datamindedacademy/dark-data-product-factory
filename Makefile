@@ -1,7 +1,7 @@
 .PHONY: install setup test oracle baseline
 
 install:            ## install dependencies into .venv
-	uv sync --extra dev
+	uv sync --python 3.15 --extra dev
 
 setup:              ## generate the warehouse + build the dbt project
 	.venv/bin/factory setup
