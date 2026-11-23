@@ -15,7 +15,8 @@
 ```
 
 The same stations run as a GitHub Actions pipeline (`factory ci <station>`, see
-[ci.md](ci.md)); `factory e2e` is the laptop version of that pipeline.
+[ci.md](ci.md)); `factory e2e` is the laptop version of that pipeline, and the line the final
+challenge runs ([competition.md](competition.md)).
 
 ## Contracts (`factory/contracts.py`)
 
@@ -29,6 +30,14 @@ The same stations run as a GitHub Actions pipeline (`factory ci <station>`, see
 | `output/recommendations.json` | `LineManagerReport` | line manager | humans |
 
 `factory validate <kind> <file>` validates any of them; agents are told to run it.
+
+`DataProductSpec` is a home-grown format on purpose: it is small enough to read in one go. Its
+`outputs` are a data contract, and its `metrics` a semantic model. The open standards for the two are
+[ODCS](https://bitol-io.github.io/open-data-contract-standard/) (Open Data Contract Standard, Bitol /
+Linux Foundation: schema, quality rules, SLAs, ownership of an output port) and
+[Apache Ossie](https://ossie.apache.org/) (metrics, dimensions and their relationships). Emitting
+both next to `spec.yaml` is a good extension: consumers outside the factory can read them, and
+ODCS quality rules can run in CI with tools like `datacontract-cli`.
 
 ### The spec is executable
 
@@ -50,8 +59,17 @@ afterwards (`cd runs/<run>/workspace && git log -p`).
 
 ## Agents and the runner (`factory/runner.py`)
 
-An agent is a directory (see [agents/README.md](../agents/README.md)). The runner turns
-`agent.yaml` into `ClaudeAgentOptions`:
+An agent is a directory (see [agents/README.md](../agents/README.md)). Everything around the
+runner (the e2e line, the CI stations, the benchmark, the final scoring) only knows
+`run_agent(agent_dir, workspace, run_dir) -> summary` and the files the agent leaves behind, so
+the framework is a detail of the agent directory:
+
+- **`agent.py` present → an Agno agent.** The runner calls `build_agent(ws, cfg)` and
+  `await agent.arun(prompt)`. Tools, skills and MCP servers are whatever `agent.py` gives the
+  Agno `Agent`; `builtin_tools` and `mcp` in `agent.yaml` are ignored. `max_budget_usd` is not
+  enforced.
+- **otherwise → the Claude Agent SDK** (the baselines). The runner turns `agent.yaml` into
+  `ClaudeAgentOptions`:
 
 | agent.yaml | Agent SDK option |
 |---|---|
@@ -73,10 +91,16 @@ the same context. WebFetch/WebSearch are disabled.
 and `result` (cost, turns, tokens, duration). `summary.json` aggregates it and the
 benchmark adds `score` and `grades`. The line manager reads exactly these files.
 
+Agno runs produce the same events and summary (`framework: agno`), with three differences: the
+events are written when the run ends, so they all carry the end time; there is no `init` event;
+and the cost is computed from the token counts with the price table in `factory/tracing.py`,
+because Agno does not report a cost for Claude models.
+
 ## Tools (`factory/tools/`)
 
 - `warehouse`: `run_sql` (read-only), `list_tables`, `describe_table` - bound to the
-  workspace's DuckDB. Baselines only get `run_sql`.
+  workspace's DuckDB. Baselines only get `run_sql`. `run_sql_text` is the same query as a plain
+  function, for Agno agents.
 - `governance`: `checkup` - runs [checkup](https://pypi.org/project/checkup/)
   (`checkup run`, config in `warehouse/checkup.yaml`): project health metrics from the
   checkup-dbt plugin plus one metric per mechanical Fernhill rule (GOV-001..005, 007, 009)

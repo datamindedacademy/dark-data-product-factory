@@ -3,9 +3,7 @@ version: 2
 models:
   - name: fct_orders
     description: >
-      One row per order (deduplicated). Includes cancelled orders (filter on
-      is_cancelled) and all customers. Amounts are converted to EUR using the
-      daily FX rate of the order date.
+      One row per order, with amounts in EUR.
     config:
       contract: {enforced: true}
       meta:

@@ -8,14 +8,19 @@ the governance agent (and you) run the real thing::
 
     cd warehouse && dbt parse && checkup run --tag data_product=category_performance
 
-Rules that need judgement (PII, naming of measures, business rules, dashboards)
-are left to the governance agent - that is the point of the governance track.
-``run()`` returns the same findings as structured JSON for tests and graders.
+GOV-006, 008 and 010 are also checked here, as heuristics (``JUDGEMENT_RULES``): by column
+name, by test and by the board's ``ref()``s. They are
+*not* in ``warehouse/checkup.yaml``, so the governance agent does not get them for free: finding
+PII, unit and dashboard problems is still the governance track (enabling these metrics is one
+of its levers). GOV-011 (business rules) stays judgement; the final's oracle checks it as SQL.
+``run()`` returns the findings as structured JSON; by default only the mechanical rules, like the
+agents' checkup.yaml. The final's grader (``factory/competition.py``) asks for all of them.
 """
 
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
@@ -23,6 +28,13 @@ from typing import Any
 from claude_agent_sdk import create_sdk_mcp_server, tool
 
 MECHANICAL_RULES = ["GOV-001", "GOV-002", "GOV-003", "GOV-004", "GOV-005", "GOV-007", "GOV-009"]
+JUDGEMENT_RULES = ["GOV-006", "GOV-008", "GOV-010"]
+
+# ponytail: name heuristics. A PII column called `contact` or a money column called `total` slips through.
+_PII = re.compile(r"(^|_)(e_?mail|first_name|last_name|full_name|customer_name|phone|street|address|ip_address)($|_)")
+_MONEY = re.compile(r"(^|_)(revenue|amount|price|cost|spend|refund|refunds|margin|sales|fee)$")
+_RATIO = re.compile(r"_(rate|pct)$")
+_REF = re.compile(r"""ref\(\s*['"]([A-Za-z0-9_]+)['"]\s*\)""")
 
 
 @dataclass
@@ -60,10 +72,39 @@ def _tests_by_model(manifest: dict) -> dict[str, list[dict]]:
     return out
 
 
-def check(manifest: dict, product: str | None = None) -> list[Finding]:
+def _ratio_tested(tests: list[dict], column: str) -> bool:
+    for t in tests:
+        tm = t.get("test_metadata") or {}
+        kw = tm.get("kwargs") or {}
+        if tm.get("name") == "accepted_range" and kw.get("column_name") == column and \
+                kw.get("min_value") is not None and kw.get("max_value") is not None and \
+                0 <= float(kw["min_value"]) and float(kw["max_value"]) <= 1:
+            return True
+    return False
+
+
+def _check_board(charts_dir: Path, product: str, models: set[str]) -> list[Finding]:
+    import yaml
+
+    path = charts_dir / f"{product}.yml"
+    try:
+        board = yaml.safe_load(path.read_text()) or {}
+    except (OSError, yaml.YAMLError) as exc:
+        return [Finding("GOV-010", product, None, f"no readable board {path.name}: {type(exc).__name__}")]
+    queries = board.get("queries") if isinstance(board, dict) else None
+    if not isinstance(queries, dict) or not queries:
+        return [Finding("GOV-010", product, None, "board has no queries")]
+    return [Finding("GOV-010", product, None, f"board query {q} does not read the product's own models")
+            for q, d in queries.items()
+            if not (isinstance(d, dict) and set(_REF.findall(str(d.get("sql", "")))) & models)]
+
+
+def check(manifest: dict, product: str | None = None, charts_dir: Path | None = None) -> list[Finding]:
+    """Violations in the product's mart models. ``charts_dir`` (with ``product``) also checks GOV-010."""
     findings: list[Finding] = []
     tests = _tests_by_model(manifest)
-    for node in _mart_models(manifest, product):
+    marts = _mart_models(manifest, product)
+    for node in marts:
         name = node["name"]
         cfg = node.get("config", {})
         meta = cfg.get("meta", {}) or node.get("meta", {})
@@ -109,18 +150,35 @@ def check(manifest: dict, product: str | None = None) -> list[Finding]:
         for dep in node.get("depends_on", {}).get("nodes", []):
             if dep.startswith("source."):
                 findings.append(Finding("GOV-009", name, None, f"selects directly from {dep}"))
+
+        if node["fqn"][2] != "core":  # only `core` may expose personal data
+            for cname, c in cols.items():
+                if _PII.search(cname.lower()) or (c.get("meta") or {}).get("pii"):
+                    findings.append(Finding("GOV-006", name, cname, "data product exposes a personal data column"))
+        for cname in cols:
+            if _RATIO.search(cname) and not _ratio_tested(model_tests, cname):
+                findings.append(Finding("GOV-008", name, cname, "ratio without an accepted_range test within 0..1"))
+            elif not _RATIO.search(cname) and _ratio_tested(model_tests, cname):
+                findings.append(Finding("GOV-008", name, cname, "ratio (range 0..1) without _rate or _pct suffix"))
+            elif _MONEY.search(cname):
+                findings.append(Finding("GOV-008", name, cname, "monetary column without currency suffix (_eur)"))
+    if charts_dir is not None and product and product != "core":
+        findings += _check_board(charts_dir, product, {n["name"] for n in marts})
     return findings
 
 
-def run(project_dir: Path, product: str | None = None) -> dict:
+def run(project_dir: Path, product: str | None = None, rules: list[str] = MECHANICAL_RULES) -> dict:
+    """Findings for ``rules``. The default is what the agents' checkup.yaml checks; the final's grader passes
+    ``MECHANICAL_RULES + JUDGEMENT_RULES`` (GOV-010 also needs ``charts/<product>.yml``, so not before bi ran)."""
     manifest_path = project_dir / "target" / "manifest.json"
     if not manifest_path.exists():
         raise FileNotFoundError(f"{manifest_path} not found - run `dbt parse` in {project_dir} first")
-    findings = check(json.loads(manifest_path.read_text()), product)
+    charts = project_dir / "charts" if "GOV-010" in rules else None
+    findings = [f for f in check(json.loads(manifest_path.read_text()), product, charts) if f.rule_id in rules]
     return {
         "product": product,
-        "checked_rules": MECHANICAL_RULES,
-        "not_checked": ["GOV-006", "GOV-008", "GOV-010", "GOV-011"],
+        "checked_rules": list(rules),
+        "not_checked": [r for r in MECHANICAL_RULES + JUDGEMENT_RULES + ["GOV-011"] if r not in rules],
         "violations": [asdict(f) for f in findings],
     }
 

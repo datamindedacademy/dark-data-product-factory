@@ -33,9 +33,13 @@ dashboard is merged.
  factory-line-manager.yml (Mondays): last week's traces ─▶ line manager ─▶ issue with recommendations
  factory-bench.yml (label run-benchmark on a PR changing agents/): benchmark the changed stations
  ci.yml: pytest + oracle runs - CI for the factory code itself, no API key needed
+ competition.yml (dispatched by the organisers): one team's line on one request, built and scored
 ```
 
-Two things differ from the local `factory e2e` line. BI runs before review here, so the
+`competition.yml` is the pipeline of the final challenge. It runs the laptop line (`factory e2e`)
+in one job and scores the result in two more: see [competition.md](competition.md).
+
+Two things differ between the issue → PR pipeline and the local `factory e2e` line. BI runs before review here, so the
 review and the gates cover the dashboard too. And the rework loop is the PR event loop:
 each rework is a commit (`factory: rework round <n>`), visible in the PR history.
 
@@ -78,7 +82,7 @@ that is caught and reworked.
      `factory:approved` and waits for a human. Combine it with branch protection that requires
      the `checks` job.
    - `FACTORY_MAX_REWORK` (default 2): rework rounds before handing over to a human.
-   - `FACTORY_MODEL`: model for every agent (default `claude-opus-5-5`).
+   - `FACTORY_MODEL`: model for every agent (default `claude-haiku-5-5`).
    - `FACTORY_AGENT_<STATION>`: plug another agent directory into a station, e.g.
      `FACTORY_AGENT_BI=agents/bi-teamx`.
 4. **Issue template**: `.github/ISSUE_TEMPLATE/data-product-request.yml` adds the label that
@@ -89,9 +93,13 @@ PRs from forks get no secrets, so the agent jobs only run on branches of the rep
 
 ## In the capstone
 
-- The integration block of the day can run in CI: each team sets its
-  `FACTORY_AGENT_<STATION>` variable, and a facilitator files a new issue.
-- Teams that change an agent open a PR with the `run-benchmark` label. The benchmark result is
-  posted on the PR: an evaluation gate for prompt changes.
-- The line manager track gets real traces: everything the pipeline does is uploaded as
+- The final challenge and its practice runs use `competition.yml`, not the issue → PR pipeline:
+  [competition.md](competition.md). Teams run it in their fork with their own
+  `ANTHROPIC_API_KEY` secret; the final runs in the organisers' repository.
+- In a fork with the secrets above, the issue → PR pipeline works too: label an issue
+  `data-product-request` and watch the line open, review and rework a PR.
+- A PR inside one repository that changes `agents/<station>/` can carry the `run-benchmark` label.
+  The benchmark result is posted on the PR: an evaluation gate for prompt changes. PRs from forks
+  get no secrets, so this does not run on the pull request a team opens to the organisers.
+- The line manager track gets real traces: everything the pipelines do is uploaded as
   `factory-traces-*` artifacts in the same format as `runs/`.

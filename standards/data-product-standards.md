@@ -19,7 +19,7 @@ that share `meta.data_product: <product_id>`, plus one dashboard board in
 | GOV-008 | Monetary columns carry their currency as suffix (`_eur`). Ratios are suffixed `_rate` or `_pct`, are stored as fractions (0–1) and have an `accepted_range` test (0..1). | no – needs judgement |
 | GOV-009 | Mart models never select from `source()` directly; they build on staging (`stg_`) or other marts. | yes |
 | GOV-010 | Every data product has a dashboard board in `warehouse/charts/<product_id>.yml` that passes `dct validate`, and the board's queries read from the product's own mart models. | no – needs judgement |
-| GOV-011 | Business rules are applied consistently with the rest of the warehouse: cancelled orders are excluded from revenue, internal QA accounts (e-mail domain `fernhill.test`) are excluded from every customer-facing metric, and amounts in GBP are converted to EUR with `stg_fx_rates`. | no – needs judgement |
+| GOV-011 | Business rules are applied consistently with the rest of the warehouse. | no – needs judgement |
 
 Mechanical rules are measured by [checkup](https://pypi.org/project/checkup/) with the
 Fernhill plugin (`factory/checkup_plugin.py`, configured in `warehouse/checkup.yaml`):

@@ -17,7 +17,7 @@ the other teams' benchmark runs have the same format: use them in the afternoon.
 
 **Ideas to improve**
 - Don't make the model read 120 traces. Give it analytics: DuckDB reads JSONL
-  (`select * from read_json_auto('input/runs/*/trace.jsonl')`) - a `tools.py` with a
+  (`select * from read_json_auto('input/runs/*/trace.jsonl')`) - a
   `query_traces` tool, or a skill with ready-made queries (errors per tool, turns per
   agent, cost share, retries of the same command).
 - Quantify: every recommendation with evidence (runs, counts, $) and expected impact.

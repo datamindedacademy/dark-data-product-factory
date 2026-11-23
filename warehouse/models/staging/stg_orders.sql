@@ -1,4 +1,3 @@
--- Deduplicate replayed ingestion loads: keep the latest load per order_id.
 with ranked as (
     select
         *,

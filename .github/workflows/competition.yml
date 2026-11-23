@@ -1,0 +1,180 @@
+# The final challenge: run one team's factory on a request and score the product against a hidden oracle.
+#
+# This workflow lives in the organisers' repository and is the only thing that produces a score.
+# A team cannot change it or anything it runs: the checkout is always this repository, and from the
+# team's commit only `agents/` (run job) and `benchmark/cases/` (build job) are overlaid.
+#
+#   run    has the API key, runs team code     ─▶ artifact `submission` (spec, models, board, traces)
+#   build  no secrets, runs untrusted SQL only ─▶ artifact `build` (warehouse.duckdb, build.json, cases.json)
+#   grade  has the hidden oracle, no team code ─▶ score.json, score.md
+#
+# Design, runbook and the loopholes that remain: docs/competition.md
+name: "competition · final challenge"
+run-name: "final challenge · ${{ inputs.team }} · ${{ inputs.oracle }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      team:
+        description: "Team name (A-Z, 0-9, _). Also selects the secret ANTHROPIC_API_KEY_<TEAM>."
+        required: true
+      repo:
+        description: "The team's repository (owner/name)"
+        required: true
+      sha:
+        description: "Commit to run: the full SHA recorded at the freeze"
+        required: true
+      oracle:
+        description: "Product id of the oracle: in benchmark/products (practice) or in the private oracle repository (final)"
+        required: true
+        default: category_performance
+      issue:
+        description: "Issue number of the request. Empty = practice: the issue of the public product."
+      pr:
+        description: "Pull request to post the score on (optional)"
+
+permissions: {}
+
+env:
+  TEAM: ${{ inputs.team }}
+  REPO: ${{ inputs.repo }}
+  SHA: ${{ inputs.sha }}
+  ORACLE: ${{ inputs.oracle }}
+  ISSUE: ${{ inputs.issue }}
+  PR: ${{ inputs.pr }}
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      issues: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Validate inputs
+        run: |
+          [[ "$TEAM" =~ ^[A-Z0-9_]+$ ]] && [[ "$REPO" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]] && \
+          [[ "$SHA" =~ ^[0-9a-f]{40}$ ]] && [[ "$ORACLE" =~ ^[a-z][a-z0-9_]*$ ]] && [[ "$ISSUE$PR" =~ ^[0-9]*$ ]]
+      - uses: ./.github/actions/factory-setup
+      - name: The request
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ -n "$ISSUE" ]; then
+            gh issue view "$ISSUE" --repo "$GITHUB_REPOSITORY" --json title,body --jq '"# \(.title)\n\n\(.body)\n"' > "$RUNNER_TEMP/issue.md"
+          else
+            factory ci final-issue --issue "benchmark/products/$ORACLE/issue.md" --oracle "benchmark/products/$ORACLE/spec.yaml" > "$RUNNER_TEMP/issue.md"
+          fi
+      - name: Overlay the team's agents
+        run: |
+          git fetch --quiet --no-tags --depth 1 "https://github.com/$REPO.git" "$SHA"
+          rm -rf agents
+          git checkout --quiet FETCH_HEAD -- agents
+      # Team code runs from here on. Nothing this job produces is trusted by the next jobs.
+      - name: Run the team's factory
+        timeout-minutes: 45
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets[format('ANTHROPIC_API_KEY_{0}', inputs.team)] || secrets.ANTHROPIC_API_KEY }}
+          FACTORY_MODEL: ${{ vars.FACTORY_MODEL }}
+        run: factory e2e --issue "$RUNNER_TEMP/issue.md" --max-rework 1
+      - name: Export the submission
+        if: always()
+        run: factory ci export-submission submission
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: submission-${{ inputs.team }}
+          path: submission/
+          if-no-files-found: ignore
+
+  build:
+    needs: run
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/factory-setup
+      # Before the submission is on disk: a case can point at any file, and none of the team's may be code.
+      - name: Validate the team's new benchmark cases (data files only)
+        run: |
+          mkdir -p build
+          git fetch --quiet --no-tags --depth 1 "https://github.com/$REPO.git" "$SHA"
+          rm -rf benchmark/cases
+          git checkout --quiet FETCH_HEAD -- benchmark/cases
+          find benchmark/cases -type f ! \( -name '*.yaml' -o -name '*.yml' -o -name '*.sql' -o -name '*.md' -o -name '*.json' -o -name '*.jsonl' -o -name '*.delete' \) -delete
+          find benchmark/cases -type l -delete
+          git diff --cached --name-only --diff-filter=A HEAD -- benchmark/cases \
+            | { grep -E '^benchmark/cases/[a-z_]+/[^/]+\.yaml$' || true; } | head -6 \
+            | xargs -r factory ci check-cases --out build/cases.json
+      - uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: submission-${{ inputs.team }}
+          path: submission/
+      - name: Build the product from the submitted SQL and YAML
+        run: |
+          mkdir -p submission
+          factory ci build-submission submission build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: build-${{ inputs.team }}
+          path: build/
+
+  grade:
+    needs: [run, build]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/factory-setup   # also generates the pristine warehouse the reference queries run on
+      - uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: submission-${{ inputs.team }}
+          path: submission/
+      - uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: build-${{ inputs.team }}
+          path: build/
+      - name: Fetch the hidden oracle
+        if: hashFiles(format('benchmark/products/{0}/spec.yaml', inputs.oracle)) == ''
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ vars.ORACLE_REPO }}
+          token: ${{ secrets.ORACLE_TOKEN }}
+          path: oracle
+          persist-credentials: false
+      - name: Score
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p submission build
+          spec="benchmark/products/$ORACLE/spec.yaml"; [ -f "$spec" ] || spec="oracle/products/$ORACLE/spec.yaml"
+          # Wall-clock time of the run job as GitHub measured it: the team cannot influence this number.
+          duration=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/jobs" \
+            --jq '.jobs[] | select(.name == "run") | (.completed_at | fromdate) - (.started_at | fromdate)')
+          factory ci score submission build --oracle "$spec" --duration-s "$duration" --team "$TEAM"
+          cat factory-out/score.md >> "$GITHUB_STEP_SUMMARY"
+          if [ -n "$PR" ]; then gh pr comment "$PR" --repo "$GITHUB_REPOSITORY" --body-file factory-out/score.md; fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: score-${{ inputs.team }}
+          path: |
+            factory-out/score.json
+            build/dashboard.html

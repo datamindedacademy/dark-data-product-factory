@@ -1,6 +1,6 @@
 """Checks on the benchmark itself. No LLM calls - run these after changing cases or graders.
 
-    pytest -q                 # ~2 minutes, needs `factory setup` first
+    pytest -q                 # ~4 minutes, needs `factory setup` first
 """
 
 from __future__ import annotations
@@ -71,6 +71,10 @@ def test_checkup_finds_exactly_the_mechanical_violations(tmp_path):
         expected = {(v["rule_id"], v["model"]) for v in case.expected["violations"]
                     if v["rule_id"] in checkup.MECHANICAL_RULES}
         assert found == expected, case.id
+        found = {(v["rule_id"], v["model"]) for v in checkup.run(
+            ws / "warehouse", case.input["product"], checkup.MECHANICAL_RULES + checkup.JUDGEMENT_RULES)["violations"]}
+        expected = {(v["rule_id"], v["model"]) for v in case.expected["violations"] if v["rule_id"] != "GOV-011"}
+        assert found == expected, f"{case.id} with the judgement heuristics (what the final grades)"
 
 
 @pytest.mark.parametrize("agent", sorted(p.name for p in paths.AGENTS.iterdir() if (p / "agent.yaml").exists()))
@@ -78,9 +82,13 @@ def test_agent_configs_build(agent, tmp_path):
     cfg = AgentConfig.load(paths.AGENTS / agent)
     ws = _ws(tmp_path)
     workspace.install_agent_context(ws, cfg.dir, cfg.skills)
-    opts = build_options(cfg, ws)
-    assert opts.cwd == str(ws)
     assert (cfg.dir / cfg.prompt).exists()
+    if (cfg.dir / "agent.py").exists():  # an Agno agent
+        from factory.runner import _load
+
+        assert hasattr(_load(cfg.dir / "agent.py").build_agent(ws, cfg), "arun")
+    else:
+        assert build_options(cfg, ws).cwd == str(ws)
 
 
 def test_e2e_line_with_scripted_agents(tmp_path, monkeypatch):
@@ -120,6 +128,11 @@ def test_e2e_line_with_scripted_agents(tmp_path, monkeypatch):
     assert summary["outcome"] == "delivered", summary
     assert summary["acceptance"] == 1.0
 
+    from factory import competition
+
+    sub = competition.export_submission(tmp_path.with_name(tmp_path.name + "-submission"))
+    assert {p.name for p in sub.iterdir()} >= {"spec.yaml", "models", "board.yml", "e2e_summary.json"}
+
 
 def test_tracer_records_tools_and_cost(tmp_path):
     import json
@@ -153,3 +166,46 @@ def test_checkup_tool_runs_real_checkup(tmp_path):
     assert "GOV-005: fct_marketing_channel_daily" in res.stdout
     assert "GOV-009: fct_marketing_channel_daily" in res.stdout
     assert "fernhill_gov001_mart_naming" in res.stdout
+
+
+def test_agno_agent_is_traced_like_an_sdk_agent(tmp_path):
+    """An agent dir with agent.py runs through Agno; its RunOutput becomes the same trace and summary."""
+    import asyncio
+    import json
+
+    from factory.runner import run_agent
+
+    agent = tmp_path / "fake-agno"
+    agent.mkdir()
+    (agent / "agent.yaml").write_text("model: claude-sonnet-5-5\noutputs: [output/x.txt]\n")
+    (agent / "system_prompt.md").write_text("sys")
+    (agent / "prompt.md").write_text("work in $workspace")
+    (agent / "agent.py").write_text('''
+from agno.metrics import RunMetrics
+from agno.models.message import Message
+from agno.run.agent import RunOutput
+from agno.run.base import RunStatus
+
+class Fake:
+    async def arun(self, prompt):
+        assert "$workspace" not in prompt
+        return RunOutput(content="done", status=RunStatus.completed,
+                         metrics=RunMetrics(input_tokens=1_000_000, output_tokens=100_000),
+                         messages=[Message(role="user", content=prompt), Message(role="assistant", content="querying"),
+                                   Message(role="tool", tool_name="run_sql", tool_args={"sql": "select 1"}, tool_call_id="t1",
+                                           content="boom", tool_call_error=True),
+                                   Message(role="assistant", content="done")])
+
+def build_agent(ws, cfg):
+    return Fake()
+''')
+    ws, run_dir = tmp_path / "ws", tmp_path / "run"
+    ws.mkdir()
+    run_dir.mkdir()
+    summary = asyncio.run(run_agent(agent, ws, run_dir))
+    assert summary["framework"] == "agno" and summary["status"] == "ok" and summary["num_turns"] == 2
+    assert summary["tool_calls"] == {"run_sql": 1} and summary["tool_errors"] == {"run_sql": 1}
+    assert summary["total_cost_usd"] == 3.0  # 1M in * $2 + 0.1M out * $10: Agno reports no cost, we price the tokens
+    assert summary["final_text"] == "done" and summary["missing_outputs"] == ["output/x.txt"]
+    events = [json.loads(line)["type"] for line in (tmp_path / "run" / "trace.jsonl").read_text().splitlines()]
+    assert events == ["assistant_text", "tool_use", "tool_result", "assistant_text", "result"]

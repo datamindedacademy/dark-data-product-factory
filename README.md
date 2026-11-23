@@ -1,8 +1,10 @@
 # Dark data product factory
 
-Capstone project for the AI engineering bootcamp. You will build one station of a
+Capstone project for the AI engineering bootcamp. In one day your team builds up a
 **dark factory for data products**: a line of AI agents that turns a stakeholder's
 request into a tested dbt data product with a dashboard, with no human in the loop.
+At the end of the day every team's factory builds a request nobody has seen, in CI, and
+an automated benchmark picks the winner ([docs/capstone-day.md](docs/capstone-day.md)).
 
 ```
  GitHub issue ──▶ intake ──▶ spec.yaml ──▶ implement ──▶ dbt models ──▶ review ──▶ governance ──▶ bi ──▶ dbt charts board
@@ -19,35 +21,41 @@ synthetic but realistic, messy data (`warehouse/`). Dashboards are built with
 
 Every station has a working **baseline agent** built with the Claude Agent SDK
 (`agents/<station>/`) and a **benchmark** (`benchmark/cases/<station>/`) that scores it.
-The baselines are deliberately plain. Your job: pick a station, measure the baseline,
-then improve the agent through its context (system prompt, skills, tools, MCP servers,
-model and effort) and show the improvement with numbers.
+The baselines are deliberately plain. Your job: build your own agent for a station with
+[Agno](https://docs.agno.com) (`agents/intake-agno/` is the starter), give it skills and
+an MCP server, write benchmark cases, and use them to improve the whole line - with
+numbers to show for it.
 
 ## Quick start
 
 ```bash
-uv sync --extra dev          # Python 3.15 (see .python-version), installs dbt-duckdb, dbt charts, checkup, the Agent SDK
+uv sync --extra dev          # Python 3.15 (see .python-version), installs dbt-duckdb, dbt charts, checkup, the Agent SDK, Agno
 source .venv/bin/activate
 factory setup                # generates the warehouse and builds the dbt project (~10 s)
-pytest -q                    # checks the benchmark itself, no LLM calls (~5 min)
+pytest -q                    # checks the benchmark itself, no LLM calls (~4 min)
 
-export ANTHROPIC_API_KEY=...         # or log in with `claude` - the Agent SDK uses the same auth
+export ANTHROPIC_API_KEY=...         # the baselines also work with a `claude` login; Agno agents need the key
 factory bench list
 factory run intake --case intake-01-category        # one run, prints the grades
 factory bench run intake --repeat 3                 # the baseline score for your station
 factory bench report                                # leaderboard of everything you ran
+factory run intake --agent-dir agents/intake-agno --case intake-01-category   # the Agno starter
 factory e2e --issue benchmark/products/category_performance/issue.md   # the whole line
 ```
 
 In production the factory runs as a **CI pipeline** on GitHub Actions: label an issue
 `data-product-request` and the line builds a branch, opens a PR, reviews, governs, reworks
 and (optionally) merges it. See [docs/ci.md](docs/ci.md); every CI step is a `factory ci`
-command you can run locally.
+command you can run locally. The final challenge runs in its own pipeline,
+`competition.yml`, which builds and scores one team's line ([docs/competition.md](docs/competition.md)).
 
 Without an API key you can still explore everything: `factory bench run <station> --oracle`
 grades the golden answers (should be 1.0) and shows you exactly what the graders check.
 
-## The stations (pick one per team)
+## The stations (split your team across them, rebuild at least one with Agno)
+
+Each person or pair owns one station; the rest of the line runs on its baseline. With four people,
+take intake, implement, governance and bi: together they decide 80 of the 100 final points.
 
 | Track | Input → output | What makes it hard | Brief |
 |---|---|---|---|
@@ -63,21 +71,25 @@ grades the golden answers (should be 1.0) and shows you exactly what the graders
 ```
 warehouse/            Fernhill's dbt + dbt charts project (DuckDB). The "company repo" agents work in.
 standards/            Data product standards (rule ids GOV-001..011) used by review & governance.
-agents/<station>/     Baseline agents: agent.yaml, system_prompt.md, prompt.md, skills/   ← you edit these
-factory/              The factory: contracts, workspaces, agent runner + tracing, tools, e2e line, CI stations, CLI
-.github/workflows/    The factory as CI: factory-build (issue → PR), factory-pr (gates, review, rework, merge), ...
+agents/<station>/     The line: agent.yaml, system_prompt.md, prompt.md, skills/, agent.py (Agno)   ← yours
+agents/intake-agno/   Starter Agno agent
+factory/              The factory: contracts, workspaces, agent runner + tracing, tools, e2e line, CI stations,
+                      final-challenge scoring, CLI
+.github/workflows/    The factory as CI: factory-build (issue → PR), factory-pr (gates, review, rework, merge),
+                      competition (the final challenge), ...
 benchmark/
   products/           Golden data products: issue, spec, models, dashboard (the answer keys)
-  cases/<station>/    Benchmark cases (YAML)                                            ← you add these
+  cases/<station>/    Benchmark cases (YAML) and the files they need                    ← yours
   stages/             Setup, oracle and graders per station
   fixtures/           Planted-defect variants (review, governance) and the trace generator (line manager)
-docs/                 Day plan for facilitators, architecture, benchmark guide, track briefs
-tests/                Tests of the benchmark itself (oracle = 1.0, doing nothing = 0, defects are caught)
+docs/                 Day plan, final challenge, architecture, CI, benchmark guide, track briefs
+tests/                Tests of the benchmark, the CI stations and the final scoring - no LLM calls
 ```
 
 ## Documentation
 
-- [docs/capstone-day.md](docs/capstone-day.md) – the day: schedule, deliverables, scoring (facilitators start here)
+- [docs/capstone-day.md](docs/capstone-day.md) – the day: schedule, checkpoints, what the final is evaluated on, rules (start here)
+- [docs/competition.md](docs/competition.md) – the final challenge for organisers: design, scoring, runbook, loopholes
 - [docs/architecture.md](docs/architecture.md) – contracts between stations, workspaces, runner, traces
 - [docs/ci.md](docs/ci.md) – the factory as a GitHub Actions pipeline (issue → PR → merge)
 - [docs/benchmark.md](docs/benchmark.md) – how grading works and how to design your own cases and graders

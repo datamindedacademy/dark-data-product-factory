@@ -12,9 +12,10 @@ adds one metric per *mechanical* Fernhill rule (see
     checkup run -q --materializer markdown                         # agent-friendly
 
 Each metric's value is the number of violations; the diagnostic lists them as
-``model`` or ``model.column``. The rules that need judgement (GOV-006, 008, 010,
-011) are deliberately *not* metrics: that is the governance agent's job. Turning
-more of them into checkup metrics is a good capstone exercise.
+``model`` or ``model.column``. GOV-006, 008 and 010 exist as heuristic metrics
+too, but ``warehouse/checkup.yaml`` does not enable them: spotting PII, units and
+dashboard problems is the governance agent's job, and enabling them is one of its
+levers. The final's grader always applies them (``factory/tools/checkup.py``).
 """
 
 from __future__ import annotations
@@ -39,7 +40,8 @@ class FernhillRuleMetric(DbtMetric):
     def calculate(self, context: Context, measurements: Measurements) -> Measurement:
         manifest_path = self.get_project_dir(context) / "target" / "manifest.json"
         product = (context.get("tags") or {}).get("data_product")
-        findings = [f for f in check(json.loads(manifest_path.read_text()), product) if f.rule_id == self.rule_id]
+        charts = self.get_project_dir(context) / "charts"
+        findings = [f for f in check(json.loads(manifest_path.read_text()), product, charts) if f.rule_id == self.rule_id]
         items = sorted({f"{f.model}.{f.column}" if f.column else f.model for f in findings})
         diagnostic = f"{self.rule_id}: {', '.join(items)}" if items else ""
         return self.measure(value=len(findings), tags={"rule_id": self.rule_id}, diagnostic=diagnostic)
@@ -85,3 +87,21 @@ class Gov009LayeringMetric(FernhillRuleMetric):
     rule_id: ClassVar[str] = "GOV-009"
     name: str = "fernhill_gov009_layering"
     description: str = "Mart models selecting from source() directly"
+
+
+class Gov006PiiMetric(FernhillRuleMetric):
+    rule_id: ClassVar[str] = "GOV-006"
+    name: str = "fernhill_gov006_pii"
+    description: str = "Data product columns that hold personal data (by name or meta.pii)"
+
+
+class Gov008UnitsMetric(FernhillRuleMetric):
+    rule_id: ClassVar[str] = "GOV-008"
+    name: str = "fernhill_gov008_units"
+    description: str = "Ratios without an accepted_range 0..1 test, monetary columns without currency suffix"
+
+
+class Gov010DashboardMetric(FernhillRuleMetric):
+    rule_id: ClassVar[str] = "GOV-010"
+    name: str = "fernhill_gov010_dashboard"
+    description: str = "Products without a board, or board queries that do not read the product's models"

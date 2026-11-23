@@ -9,7 +9,7 @@ import yaml
 
 from benchmark.core import Case, Grade, Stage
 from factory import workspace
-from factory.acceptance import AcceptanceReport, evaluate
+from factory.acceptance import AcceptanceReport, evaluate, missing_outputs
 from factory.contracts import DataProductSpec
 from factory.tools import checkup
 
@@ -49,17 +49,7 @@ class Implement(Stage):
         db = ws / "warehouse" / "warehouse.duckdb"
         con = duckdb.connect(str(db), read_only=True)
         try:
-            cols = {}
-            for t, c in con.execute("select table_name, column_name from information_schema.columns "
-                                    "where table_schema = 'main'").fetchall():
-                cols.setdefault(t, set()).add(c)
-            missing = []
-            expected_cols = 0
-            for out in spec.outputs:
-                for c in out.columns:
-                    expected_cols += 1
-                    if c.name not in cols.get(out.name, set()):
-                        missing.append(f"{out.name}.{c.name}")
+            missing, expected_cols = missing_outputs(spec, con)
             grades.append(Grade("outputs_match_spec", 1 - len(missing) / max(expected_cols, 1), 2,
                                 f"missing {missing}" if missing else "all output models and columns exist"))
 

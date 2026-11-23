@@ -31,12 +31,9 @@ import subprocess
 from pathlib import Path
 from typing import Any
 
-import yaml
-
 from factory import paths, workspace
 from factory.acceptance import run_acceptance
 from factory.contracts import DataProductSpec, GovernanceReport, LineManagerReport, Review
-
 
 
 def out_dir() -> Path:
@@ -338,7 +335,3 @@ def collect_runs(dest: Path) -> int:
                 shutil.copy(summary.parent / f, target / f)
         n += 1
     return n
-
-
-def load_yaml(path: Path) -> Any:
-    return yaml.safe_load(path.read_text())

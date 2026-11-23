@@ -2,7 +2,6 @@ select
     product_id,
     sku,
     product_name,
-    -- merchandisers type categories by hand: normalise casing + whitespace
     case lower(trim(category))
         when 'camping kitchen' then 'Camping Kitchen'
         when 'sleeping bags' then 'Sleeping Bags'

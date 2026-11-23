@@ -85,7 +85,9 @@ def _rows_match(actual: list[tuple], expected: list[tuple], tol: float, ordered:
     return True
 
 
-def evaluate(con: duckdb.DuckDBPyConnection, check: AcceptanceCheck) -> CheckResult:
+def evaluate(con: duckdb.DuckDBPyConnection, check: AcceptanceCheck,
+             ref_con: duckdb.DuckDBPyConnection | None = None) -> CheckResult:
+    """``ref_con``: run ``reference_sql`` there instead of on ``con`` (grading an untrusted build against pristine data)."""
     e: Expectation = check.expect
     try:
         rows = con.execute(render_sql(check.sql)).fetchall()
@@ -109,7 +111,7 @@ def evaluate(con: duckdb.DuckDBPyConnection, check: AcceptanceCheck) -> CheckRes
         return CheckResult(check.id, ok, f"got {first!r}, expected in [{e.min}, {e.max}]", first, [e.min, e.max])
     if e.type == "matches_reference":
         try:
-            ref_rows = con.execute(render_sql(e.reference_sql or "")).fetchall()
+            ref_rows = (ref_con or con).execute(render_sql(e.reference_sql or "")).fetchall()
         except Exception as exc:  # noqa: BLE001
             return CheckResult(check.id, False, f"reference query failed: {str(exc).splitlines()[0][:200]}")
         ok = _rows_match(rows, ref_rows, e.tolerance, e.ordered)
@@ -118,16 +120,31 @@ def evaluate(con: duckdb.DuckDBPyConnection, check: AcceptanceCheck) -> CheckRes
     raise ValueError(e.type)
 
 
-def run_acceptance(spec: DataProductSpec, db_path: str | Path) -> AcceptanceReport:
-    con = duckdb.connect(str(db_path), read_only=True)
+def run_acceptance(spec: DataProductSpec, db_path: str | Path, ref_db: str | Path | None = None) -> AcceptanceReport:
+    # No file or network access: the database may hold views written by an agent.
+    sandbox = {"enable_external_access": False}
+    con = duckdb.connect(str(db_path), read_only=True, config=sandbox)
+    ref_con = duckdb.connect(str(ref_db), read_only=True, config=sandbox) if ref_db else None
     try:
         report = AcceptanceReport()
         for q in spec.business_questions:
             for check in q.acceptance:
-                report.results.append(evaluate(con, check))
+                report.results.append(evaluate(con, check, ref_con))
         return report
     finally:
         con.close()
+        if ref_con:
+            ref_con.close()
+
+
+def missing_outputs(spec: DataProductSpec, con: duckdb.DuckDBPyConnection) -> tuple[list[str], int]:
+    """Output columns of the spec that do not exist in schema ``main``: (missing ``model.column``, expected count)."""
+    cols: dict[str, set[str]] = {}
+    for t, c in con.execute("select table_name, column_name from information_schema.columns "
+                            "where table_schema = 'main'").fetchall():
+        cols.setdefault(t, set()).add(c)
+    expected = [(o.name, c.name) for o in spec.outputs for c in o.columns]
+    return [f"{m}.{c}" for m, c in expected if c not in cols.get(m, set())], len(expected)
 
 
 def main() -> None:  # python -m factory.acceptance spec.yaml warehouse.duckdb

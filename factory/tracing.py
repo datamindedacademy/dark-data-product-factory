@@ -1,4 +1,4 @@
-"""Turn the Agent SDK message stream into a JSONL trace + a run summary.
+"""Turn the Agent SDK message stream (or an Agno run) into a JSONL trace + a run summary.
 
 Every run of every agent writes ``trace.jsonl`` and ``summary.json`` in its run
 directory. The benchmark adds scores to the summary, and the line-manager agent
@@ -33,6 +33,22 @@ from claude_agent_sdk import (
 )
 
 PREVIEW = 600
+
+# USD per million tokens (input, output), matched on the model id. Agno does not report cost for
+# Claude, so Agno runs are priced from their token counts. Source: Anthropic price list, 2026-11.
+# ponytail: three hard-coded prices; an unknown model gets cost None (scored as the worst cost in
+# the competition) - add a row when you allow another model.
+PRICES = {"opus-5-5": (4.0, 20.0), "sonnet-5-5": (2.0, 10.0), "haiku-5-5": (0.1, 0.5)}
+
+
+def estimate_cost(model: str, usage: dict[str, Any]) -> float | None:
+    """Cost from token counts: cache writes at 1.25x and cache reads at 0.05x the input price."""
+    price = next((p for k, p in PRICES.items() if k in (model or "")), None)
+    if not price:
+        return None
+    n = lambda k: usage.get(k) or 0  # noqa: E731
+    inp = n("input_tokens") + 1.25 * n("cache_creation_input_tokens") + 0.05 * n("cache_read_input_tokens")
+    return round((inp * price[0] + n("output_tokens") * price[1]) / 1e6, 4)
 
 
 def _trim(v: Any, n: int = 2000) -> Any:
@@ -103,6 +119,34 @@ class Tracer:
                            "duration_ms": msg.duration_ms, "total_cost_usd": msg.total_cost_usd,
                            "usage": msg.usage, "stop_reason": msg.stop_reason}
             self._emit({"type": "result", **self.result})
+
+    def on_agno_run(self, out: Any, model: str) -> None:
+        """The same events from an Agno ``RunOutput``. Written after the run, so every ``t`` is the end time.
+
+        ``model`` (from agent.yaml) prices the run when the RunOutput does not name the model it used.
+        """
+        for m in out.messages or []:
+            if m.role == "assistant":
+                self.turn += 1
+                if isinstance(m.content, str) and m.content.strip():
+                    self.final_text = m.content
+                    self._emit({"type": "assistant_text", "turn": self.turn, "chars": len(m.content), "text": _trim(m.content)})
+            elif m.role == "tool":
+                name, text = m.tool_name or "?", _result_text(m.content)
+                self.tool_counts[name] += 1
+                self._emit({"type": "tool_use", "turn": self.turn, "id": m.tool_call_id, "name": name, "input": _trim(m.tool_args)})
+                if m.tool_call_error:
+                    self.tool_errors[name] += 1
+                self._emit({"type": "tool_result", "turn": self.turn, "id": m.tool_call_id, "name": name,
+                            "is_error": bool(m.tool_call_error), "chars": len(text), "preview": text[:PREVIEW]})
+        mt = out.metrics
+        usage = {"input_tokens": mt.input_tokens, "output_tokens": mt.output_tokens,
+                 "cache_read_input_tokens": mt.cache_read_tokens, "cache_creation_input_tokens": mt.cache_write_tokens} if mt else {}
+        status = str(getattr(out.status, "value", out.status)).lower()
+        self.result = {"subtype": status, "is_error": status != "completed", "num_turns": self.turn,
+                       "total_cost_usd": (mt.cost if mt else None) or estimate_cost(getattr(out, "model", None) or model, usage),
+                       "usage": usage}
+        self._emit({"type": "result", **self.result})
 
     def close(self, error: str | None = None) -> dict[str, Any]:
         if error:

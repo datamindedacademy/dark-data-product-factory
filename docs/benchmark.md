@@ -33,7 +33,10 @@ expected:                   # what grade() compares against
       keywords: [fan-out, duplicat, double count, inflat, order-level, ...]
 ```
 
-Paths resolve relative to the case file, then to `benchmark/`. Each station
+Paths resolve relative to the case file, then to `benchmark/`. Keep the files your own cases
+need (an issue, an overlay) next to the case under `benchmark/cases/`: that directory is what
+the final challenge takes from your fork, and `factory ci check-cases --out cases.json <case.yaml>`
+is the check it applies (doing nothing scores 0, the oracle scores 1). Each station
 (`benchmark/stages/<station>.py`) implements `setup` (build the workspace), `oracle`
 (write the golden output) and `grade` (return weighted `Grade`s). The case score is the
 weighted mean; the station score is the mean over cases.
@@ -67,8 +70,17 @@ Good cases come from failures you saw in traces, not from imagination. Some patt
   (`expected.hidden_checks`). Passing visible but failing hidden checks = overfitting.
 
 To add a new data product, create `benchmark/products/<id>/` with `issue.md`,
-`spec.yaml`, `models/` and `board.yml`; `pytest -q -k golden` checks they agree.
-Then any station can reuse it.
+`spec.yaml`, `models/` and `board.yml`, and add its id to
+`test_golden_specs_pass_their_own_acceptance` in `tests/test_benchmark.py`;
+`pytest -q -k golden` then checks they agree. Any station can reuse it. (New products are not
+taken from your fork in the final challenge: cases that count there build on the public ones.)
+
+## The end-to-end benchmark
+
+Station benchmarks grade one agent on golden inputs. The final challenge grades the whole line on
+one request: hidden acceptance checks, the required interface, checkup, the dashboard, cost and
+time ([competition.md](competition.md#scoring-100-points)). The same scoring runs against a public
+product, in CI or on a laptop, and is the benchmark to use for the line as a whole.
 
 ## Keyword graders vs. LLM judges
 

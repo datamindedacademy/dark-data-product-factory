@@ -1,0 +1,9 @@
+description: >
+  Starter Agno agent for the intake station: the same job and prompts as agents/intake,
+  built with Agno instead of the Claude Agent SDK. Copy this directory and make it yours.
+model: default
+max_turns: 60                          # passed to Agno as tool_call_limit in agent.py
+system_prompt: ../intake/system_prompt.md   # copy these two next to agent.py once you start editing them
+prompt: ../intake/prompt.md
+skills: []                             # block 2: add a skill under skills/<name>/SKILL.md and load it in agent.py
+outputs: [output/spec.yaml]

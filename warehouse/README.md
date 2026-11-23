@@ -21,5 +21,4 @@ dct render charts/sales_overview.yml --format text
 dct serve                 # live preview in the browser
 ```
 
-The data is realistic on purpose, including its mess. Read the source descriptions in
-`models/staging/_sources.yml` before you trust any number.
+

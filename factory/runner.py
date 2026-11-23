@@ -1,4 +1,4 @@
-"""Run one agent of the factory line in a workspace with the Claude Agent SDK.
+"""Run one agent of the factory line in a workspace (Claude Agent SDK baseline, or your own Agno agent).
 
 An agent is a directory under ``agents/`` (see ``agents/README.md``)::
 
@@ -8,6 +8,9 @@ An agent is a directory under ``agents/`` (see ``agents/README.md``)::
       prompt.md          the task message; $placeholders are filled per run
       skills/<name>/SKILL.md   optional skills (installed into the workspace)
       tools.py           optional: extra in-process MCP tools (def build_tools(ws) -> list)
+      agent.py           optional: an Agno agent (def build_agent(ws, cfg) -> agno.agent.Agent).
+                         When present it runs instead of the Claude Agent SDK; builtin_tools / mcp
+                         in agent.yaml are then ignored - agent.py decides tools, skills and MCP.
       CLAUDE.md          optional: repo context file placed at the workspace root
 
 Everything that shapes the agent's context lives in that directory, so the
@@ -21,18 +24,19 @@ import hashlib
 import importlib.util
 import json
 import os
+import re
 import string
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
 import yaml
-from claude_agent_sdk import ClaudeAgentOptions, create_sdk_mcp_server, query
+from claude_agent_sdk import ClaudeAgentOptions, HookMatcher, create_sdk_mcp_server, query
 
 from factory import paths, workspace
 from factory.tracing import Tracer
 
-DEFAULT_MODEL = os.environ.get("FACTORY_MODEL") or "claude-opus-5-5"
+DEFAULT_MODEL = os.environ.get("FACTORY_MODEL") or "claude-haiku-5-5"  # small on purpose: the baseline leaves room
 
 
 @dataclass
@@ -75,6 +79,15 @@ def _render(text: str, ctx: dict[str, Any]) -> str:
     return string.Template(text).safe_substitute({k: str(v) for k, v in ctx.items()})
 
 
+def _load(path: Path) -> Any:
+    """Import a Python file from an agent directory (tools.py, agent.py)."""
+    spec = importlib.util.spec_from_file_location(f"agent_{path.parent.name}_{path.stem}".replace("-", "_"), path)
+    mod = importlib.util.module_from_spec(spec)
+    assert spec.loader
+    spec.loader.exec_module(mod)
+    return mod
+
+
 def _mcp_servers(cfg: AgentConfig, ws: Path) -> tuple[dict[str, Any], list[str]]:
     from factory.tools import checkup, warehouse
 
@@ -101,15 +114,40 @@ def _mcp_servers(cfg: AgentConfig, ws: Path) -> tuple[dict[str, Any], list[str]]
 
     custom = cfg.dir / "tools.py"
     if custom.exists():
-        spec = importlib.util.spec_from_file_location(f"agent_tools_{cfg.name}", custom)
-        mod = importlib.util.module_from_spec(spec)
-        assert spec.loader
-        spec.loader.exec_module(mod)
-        tools = mod.build_tools(ws)
+        tools = _load(custom).build_tools(ws)
         if tools:
             servers["custom"] = create_sdk_mcp_server("custom", tools=tools)
             allowed += [f"mcp__custom__{t.name}" for t in tools]
     return servers, allowed
+
+
+_PATH_KEYS = ("file_path", "path", "notebook_path")
+
+
+def _escapes(ws: Path, tool: str, args: dict[str, Any]) -> str | None:
+    """Why this tool call reaches outside the workspace, or None. The repository holds the golden answers."""
+    for k in _PATH_KEYS:
+        if isinstance(args.get(k), str) and not (ws / args[k]).resolve().is_relative_to(ws.resolve()):
+            return f"{k} {args[k]} is outside the workspace"
+    if tool == "Bash":
+        # ponytail: string match, not a jail. Stops an agent wandering into the repo (it did: it read the
+        # golden specs); a determined `find /` still gets out. Real isolation = a container per run.
+        cmd = str(args.get("command", ""))
+        for allowed, alias in ((ws.resolve(), "."), (ws, "."), (paths.ROOT / ".venv", "venv")):  # the tools live in .venv
+            cmd = cmd.replace(str(allowed), alias)
+        if str(paths.ROOT) in cmd or re.search(r"(^|[\s=:'\"])(~|\$HOME|\$\{HOME\})", cmd) or re.search(r"(^|[\s/'\"=])\.\.(/|\s|$|['\"])", cmd) or re.search(r"(^|\s)(cd|pushd)\s*($|[;&|~])", cmd):
+            return "the command leaves the workspace"
+    return None
+
+
+def _workspace_guard(ws: Path):
+    async def guard(input_data: dict, tool_use_id: str | None, context: Any) -> dict:
+        why = _escapes(ws, input_data.get("tool_name", ""), input_data.get("tool_input") or {})
+        if not why:
+            return {}
+        return {"hookSpecificOutput": {"hookEventName": "PreToolUse", "permissionDecision": "deny",
+                                       "permissionDecisionReason": f"Denied: {why}. Work only inside {ws}."}}
+    return guard
 
 
 def build_options(cfg: AgentConfig, ws: Path) -> ClaudeAgentOptions:
@@ -134,6 +172,7 @@ def build_options(cfg: AgentConfig, ws: Path) -> ClaudeAgentOptions:
         permission_mode="acceptEdits",
         max_turns=cfg.max_turns,
         max_budget_usd=cfg.max_budget_usd,
+        hooks={"PreToolUse": [HookMatcher(matcher=None, hooks=[_workspace_guard(ws)])]},
         env={"DO_NOT_TRACK": "1", "DBT_SEND_ANONYMOUS_USAGE_STATS": "false",
              "PATH": f"{paths.BIN}{os.pathsep}{os.environ.get('PATH', '')}"},
     )
@@ -146,13 +185,20 @@ async def run_agent(agent_dir: str | Path, ws: Path, run_dir: Path, ctx: dict[st
     workspace.install_agent_context(ws, cfg.dir, cfg.skills)
     ctx = {"workspace": ws, **(ctx or {})}
     prompt = _render((cfg.dir / cfg.prompt).read_text(), ctx)
+    run_dir.mkdir(parents=True, exist_ok=True)
     (run_dir / "prompt.txt").write_text(prompt)
+    agno = (cfg.dir / "agent.py").exists()
     tracer = Tracer(run_dir, {"agent": cfg.name, "agent_dir": str(cfg.dir), "agent_fingerprint": cfg.fingerprint(),
+                              "framework": "agno" if agno else "claude-agent-sdk",
                               "model": cfg.model, "effort": cfg.effort, **(meta or {})})
     error = None
     try:
-        async for msg in query(prompt=prompt, options=build_options(cfg, ws)):
-            tracer.on_message(msg)
+        if agno:
+            os.environ["PATH"] = workspace.env()["PATH"]  # the agent's shell tools must find factory, dbt, dct
+            tracer.on_agno_run(await _load(cfg.dir / "agent.py").build_agent(ws, cfg).arun(prompt), cfg.model)
+        else:
+            async for msg in query(prompt=prompt, options=build_options(cfg, ws)):
+                tracer.on_message(msg)
     except Exception as exc:  # noqa: BLE001 - recorded in the trace, graded as a failed run
         error = f"{type(exc).__name__}: {exc}"
     summary = tracer.close(error)

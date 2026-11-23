@@ -32,6 +32,21 @@ def _layout_charts(node) -> set[str]:
     return out
 
 
+def answered_questions(board: dict) -> set[str]:
+    """Question ids (Q1, Q2, ...) named in the query notes or title of a chart that is placed on the board."""
+    queries = board.get("queries") or {}
+    placed = _layout_charts({k: board[k] for k in ("rows", "cols", "grid", "tabs") if k in board})
+    answered: set[str] = set()
+    for cname, chart in (board.get("charts") or {}).items():
+        if cname not in placed or not isinstance(chart, dict):
+            continue
+        q = chart.get("query")
+        qdef = queries.get(q) if isinstance(q, str) else None
+        notes = (qdef.get("notes", "") if isinstance(qdef, dict) else "") + " " + str(chart.get("title", ""))
+        answered |= set(_QID.findall(notes))
+    return answered
+
+
 class BI(Stage):
     name = "bi"
     agent = "bi"
@@ -72,18 +87,9 @@ class BI(Stage):
         except yaml.YAMLError as exc:
             return grades + [Grade("board_yaml", 0, 4, str(exc)[:300])]
         queries = board.get("queries") or {}
-        charts = board.get("charts") or {}
-        placed = _layout_charts({k: board[k] for k in ("rows", "cols", "grid", "tabs") if k in board})
 
         # Coverage: every question is answered by a query (notes) used by a chart placed on the board.
-        answered: set[str] = set()
-        for cname, chart in charts.items():
-            if cname not in placed or not isinstance(chart, dict):
-                continue
-            q = chart.get("query")
-            qdef = queries.get(q) if isinstance(q, str) else None
-            notes = (qdef.get("notes", "") if isinstance(qdef, dict) else "") + " " + str(chart.get("title", ""))
-            answered |= set(_QID.findall(notes))
+        answered = answered_questions(board)
         wanted = {q.id for q in spec.business_questions}
         grades.append(Grade("question_coverage", len(wanted & answered) / len(wanted), 3,
                             f"answered {sorted(wanted & answered)} of {sorted(wanted)}"))

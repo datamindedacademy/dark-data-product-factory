@@ -4,14 +4,11 @@ sources:
   - name: raw
     schema: raw
     description: >
-      Raw tables landed by the ingestion team (Fivetran-style, append-only).
-      Never query these from marts: go through the staging layer.
+      Raw tables landed by the ingestion team. Never query these from marts: go
+      through the staging layer.
     tables:
       - name: orders
-        description: >
-          One row per order *per ingestion load*. Replayed loads produce duplicate
-          order_id rows; the latest `_loaded_at` wins. Contains cancelled orders.
-          Amounts are in the order currency (EUR or GBP).
+        description: Orders.
         columns:
           - name: order_id
           - name: customer_id
@@ -24,26 +21,21 @@ sources:
           - name: status
             description: placed | shipped | delivered | cancelled
           - name: currency
-            description: EUR or GBP (UK customers and the London store pay in GBP).
           - name: shipping_fee
           - name: discount_code
           - name: _loaded_at
       - name: order_items
-        description: One row per order line. unit_price and discount_amount are in the order currency.
+        description: Order lines.
       - name: products
-        description: Product catalogue. `category` is typed in by merchandisers and is not consistently cased.
+        description: Product catalogue.
       - name: customers
-        description: >
-          Customer accounts. Includes internal QA accounts used by the app team to test
-          checkout in production; they are not real customers.
+        description: Customer accounts.
       - name: stores
         description: Physical stores.
       - name: returns
-        description: >
-          One row per returned order line. refund_amount is in the order currency.
-          A line can be partially returned (quantity < ordered quantity).
+        description: Returns.
       - name: fx_rates
-        description: Daily FX rates to EUR. Only non-EUR currencies have rows.
+        description: FX rates.
       - name: web_sessions
         description: >
           Web + app sessions from the analytics tracker. customer_id is only known for

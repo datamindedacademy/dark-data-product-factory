@@ -150,7 +150,7 @@ def test_workflows_are_valid_yaml():
 
     wf = Path(__file__).resolve().parents[1] / ".github" / "workflows"
     names = sorted(p.name for p in wf.glob("*.yml"))
-    assert names == ["ci.yml", "factory-bench.yml", "factory-build.yml", "factory-line-manager.yml", "factory-pr.yml"]
+    assert names == ["ci.yml", "competition.yml", "factory-bench.yml", "factory-build.yml", "factory-line-manager.yml", "factory-pr.yml"]
     for p in wf.glob("*.yml"):
         doc = yaml.safe_load(p.read_text())
         assert doc["jobs"] and (True in doc or "on" in doc), p  # PyYAML parses `on:` as True

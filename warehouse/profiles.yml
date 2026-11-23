@@ -8,3 +8,6 @@ fernhill:
       path: "{{ env_var('DBT_DUCKDB_PATH', 'warehouse.duckdb') }}"
       schema: main
       threads: 4
+      # SQL written by agents gets no file or network access: everything it needs is in the database.
+      settings:
+        enable_external_access: false

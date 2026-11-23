@@ -47,6 +47,15 @@ def query(db: Path, sql: str, limit: int = 50) -> tuple[list[str], list[tuple], 
         con.close()
 
 
+def run_sql_text(db: Path, sql: str, limit: int = 50) -> str:
+    """``run_sql`` as a plain function, for agents that are not built on the Agent SDK (see agents/intake-agno)."""
+    try:
+        cols, rows, n = query(db, sql, limit)
+    except Exception as exc:  # noqa: BLE001
+        return f"SQL error: {exc}"
+    return _fmt(cols, rows, n) if cols else "OK (no result set)"
+
+
 def build_server(db: Path, enabled: list[str] | None = None):
     """Build the ``warehouse`` MCP server bound to one DuckDB file."""
 
@@ -56,13 +65,8 @@ def build_server(db: Path, enabled: list[str] | None = None):
           "(dbt staging + mart models).",
           {"sql": str, "limit": int})
     async def run_sql(args: dict[str, Any]) -> dict[str, Any]:
-        try:
-            cols, rows, n = query(db, args["sql"], int(args.get("limit") or 50))
-        except Exception as exc:  # noqa: BLE001
-            return _text(f"SQL error: {exc}", is_error=True)
-        if not cols:
-            return _text("OK (no result set)")
-        return _text(_fmt(cols, rows, n))
+        text = run_sql_text(db, args["sql"], int(args.get("limit") or 50))
+        return _text(text, is_error=text.startswith("SQL error:"))
 
     @tool("list_tables", "List every table and view in the warehouse with its schema and row count.", {})
     async def list_tables(args: dict[str, Any]) -> dict[str, Any]:

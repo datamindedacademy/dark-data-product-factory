@@ -253,6 +253,74 @@ def ci_collect_runs(dest: Path) -> None:
     console.print(f"collected {c.collect_runs(dest)} runs into {dest}")
 
 
+# ------------------------------------------------------------------ competition
+# The final challenge (docs/competition.md). Runnable locally with a public product as the oracle.
+
+
+@ci.command("final-issue")
+@click.option("--issue", type=click.Path(exists=True, path_type=Path), required=True, help="The request, as markdown")
+@click.option("--oracle", type=click.Path(exists=True, path_type=Path), required=True, help="Golden spec of the product")
+def ci_final_issue(issue: Path, oracle: Path) -> None:
+    """Print the issue with the required interface (product id, models, columns) appended."""
+    from factory import competition
+
+    print(competition.final_issue(issue, oracle), end="")
+
+
+@ci.command("export-submission")
+@click.argument("dest", type=click.Path(path_type=Path))
+def ci_export_submission(dest: Path) -> None:
+    """Copy the product and traces of the latest `factory e2e` run to DEST."""
+    from factory import competition
+
+    console.print(f"submission: {competition.export_submission(dest) or 'no e2e run found'}")
+
+
+@ci.command("check-cases")
+@click.argument("cases", nargs=-1, type=click.Path(exists=True, path_type=Path))
+@click.option("--out", type=click.Path(path_type=Path), required=True, help="JSON file: case -> [valid, detail]")
+def ci_check_cases(cases: tuple[Path, ...], out: Path) -> None:
+    """Check benchmark cases the way pytest does: doing nothing scores 0, the oracle scores 1."""
+    from factory import competition
+
+    result = {str(c): competition.valid_case(c) for c in cases}
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(result, indent=2))
+    console.print_json(json.dumps(result))
+
+
+@ci.command("build-submission")
+@click.argument("submission", type=click.Path(exists=True, path_type=Path))
+@click.argument("out", type=click.Path(path_type=Path))
+def ci_build_submission(submission: Path, out: Path) -> None:
+    """Build a submission in a clean workspace: OUT/warehouse.duckdb + OUT/build.json. No LLM."""
+    from factory import competition
+
+    r = competition.build_submission(submission, out)
+    console.print_json(json.dumps({k: v for k, v in r.items() if k != "dbt_tail"}, default=str))
+
+
+@ci.command("score")
+@click.argument("submission", type=click.Path(exists=True, path_type=Path))
+@click.argument("build", type=click.Path(exists=True, path_type=Path))
+@click.option("--oracle", type=click.Path(exists=True, path_type=Path), required=True, help="Golden spec (hidden checks)")
+@click.option("--pristine-db", type=click.Path(exists=True, path_type=Path), default=paths.WAREHOUSE_DB, show_default=True,
+              help="Untouched warehouse the reference queries run on")
+@click.option("--duration-s", type=float, default=None, help="Wall-clock seconds of the run job")
+@click.option("--team", default="team")
+def ci_score(submission: Path, build: Path, oracle: Path, pristine_db: Path, duration_s: float | None, team: str) -> None:
+    """Score a built submission against the oracle: factory-out/score.json + score.md. No LLM, no team code."""
+    from factory import ci as c
+    from factory import competition
+
+    s = competition.score(submission, build, oracle, pristine_db, duration_s)
+    c._write("score.json", json.dumps({"team": team, **s}, indent=2))
+    md = competition.score_markdown(team, s)
+    c._write("score.md", md)
+    print(md)
+    c.set_outputs(total=s["total"])
+
+
 # -------------------------------------------------------------------- benchmark
 
 
@@ -285,7 +353,7 @@ def bench_list(suite: Path | None) -> None:
 @click.option("--repeat", default=1, show_default=True, help="Runs per case (agents are not deterministic)")
 @click.option("--parallel", default=2, show_default=True)
 @click.option("--suite", type=click.Path(exists=True, path_type=Path), default=None,
-              help="Alternative case directory (e.g. the facilitators' hold-out set)")
+              help="Alternative case directory (e.g. cases you keep out of the repository)")
 @click.option("--label", default=None, help="Name for this variant in the report")
 def bench_run(stage: str, agent_dir: Path | None, cases: tuple[str, ...], oracle: bool, judge: bool, repeat: int,
               parallel: int, suite: Path | None, label: str | None) -> None:

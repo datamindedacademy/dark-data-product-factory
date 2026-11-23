@@ -2,7 +2,7 @@ description: >
   Reads a data product request (GitHub issue), investigates the warehouse and
   writes an executable spec: purpose, business questions, acceptance checks,
   output models, data quality notes.
-model: default            # FACTORY_MODEL env var, else claude-opus-5-5
+model: default            # FACTORY_MODEL env var, else claude-haiku-5-5
 effort: medium
 max_turns: 60
 max_budget_usd: 3.0
