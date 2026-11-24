@@ -83,6 +83,7 @@ benchmark/
   stages/             Setup, oracle and graders per station
   fixtures/           Planted-defect variants (review, governance) and the trace generator (line manager)
 docs/                 Day plan, final challenge, architecture, CI, benchmark guide, track briefs
+slides/               Kick-off slides that explain the capstone (Slidev, Dataminded theme)
 tests/                Tests of the benchmark, the CI stations and the final scoring - no LLM calls
 ```
 
