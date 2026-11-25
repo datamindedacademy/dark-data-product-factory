@@ -70,7 +70,7 @@ that is caught and reworked.
 ## Setting it up on a repository
 
 1. **Secrets**
-   - `ANTHROPIC_API_KEY`: the agents' credentials.
+   - `LLM_API_KEY`: an OpenRouter key, the agents' credentials.
    - `FACTORY_TOKEN`: a GitHub App installation token or fine-grained PAT with contents,
      pull requests and issues write. Pushes and PRs made with the default `GITHUB_TOKEN` do
      not trigger other workflows, so without it the PR half never starts on its own.
@@ -82,7 +82,7 @@ that is caught and reworked.
      `factory:approved` and waits for a human. Combine it with branch protection that requires
      the `checks` job.
    - `FACTORY_MAX_REWORK` (default 2): rework rounds before handing over to a human.
-   - `FACTORY_MODEL`: model for every agent (default `claude-haiku-5-5`).
+   - `FACTORY_MODEL`: model for every agent (an OpenRouter model id, default `google/gemma-4-31b-it`).
    - `FACTORY_AGENT_<STATION>`: plug another agent directory into a station, e.g.
      `FACTORY_AGENT_BI=agents/bi-teamx`.
 4. **Issue template**: `.github/ISSUE_TEMPLATE/data-product-request.yml` adds the label that
@@ -95,7 +95,7 @@ PRs from forks get no secrets, so the agent jobs only run on branches of the rep
 
 - The final challenge and its practice runs use `competition.yml`, not the issue → PR pipeline:
   [competition.md](competition.md). Teams run it in their fork with their own
-  `ANTHROPIC_API_KEY` secret; the final runs in the organisers' repository.
+  `LLM_API_KEY` secret; the final runs in the organisers' repository.
 - In a fork with the secrets above, the issue → PR pipeline works too: label an issue
   `data-product-request` and watch the line open, review and rework a PR.
 - A PR inside one repository that changes `agents/<station>/` can carry the `run-benchmark` label.

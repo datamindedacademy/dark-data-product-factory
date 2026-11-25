@@ -4,7 +4,6 @@ version = "0.1.0"
 description = "Capstone: a dark factory for data products (Claude Agent SDK baselines, Agno agents built by the teams)"
 requires-python = ">=3.15"
 dependencies = [
-    "claude-agent-sdk>=0.2.178",
     "dbt-core>=1.10,<2",
     "dbt-duckdb>=1.9",
     "dbt-charts[mcp]>=0.11.1",
@@ -16,10 +15,9 @@ dependencies = [
     "checkup>=0.8",
     "checkup-dbt>=0.5",
     "agno[mcp]>=3.0.5",
-    "anthropic>=2.12.0",
     "arize-phoenix-otel>=0.17.3",
     "openinference-instrumentation-agno>=1.2.2",
-    "openinference-instrumentation-claude-agent-sdk>=0.1.32",
+    "openai>=2",
 ]
 
 [project.optional-dependencies]

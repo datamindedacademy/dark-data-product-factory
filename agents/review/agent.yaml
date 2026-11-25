@@ -2,11 +2,8 @@ description: >
   Reviews a data product change (branch `feature` vs `main`) against its spec and
   the standards, checks that docs are up to date, and approves or requests changes.
 model: default
-effort: medium
 max_turns: 50
-max_budget_usd: 2.0
 system_prompt: system_prompt.md
-system_prompt_mode: replace
 prompt: prompt.md
 builtin_tools: [Read, Glob, Grep, Bash, Write]
 mcp:

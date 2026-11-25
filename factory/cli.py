@@ -307,18 +307,30 @@ def ci_build_submission(submission: Path, out: Path) -> None:
 @click.option("--pristine-db", type=click.Path(exists=True, path_type=Path), default=paths.WAREHOUSE_DB, show_default=True,
               help="Untouched warehouse the reference queries run on")
 @click.option("--duration-s", type=float, default=None, help="Wall-clock seconds of the run job")
+@click.option("--cost-usd", type=float, default=None, help="Measured cost (factory ci key-usage); default: from the traces")
 @click.option("--team", default="team")
-def ci_score(submission: Path, build: Path, oracle: Path, pristine_db: Path, duration_s: float | None, team: str) -> None:
+def ci_score(submission: Path, build: Path, oracle: Path, pristine_db: Path, duration_s: float | None,
+             cost_usd: float | None, team: str) -> None:
     """Score a built submission against the oracle: factory-out/score.json + score.md. No LLM, no team code."""
     from factory import ci as c
     from factory import competition
 
-    s = competition.score(submission, build, oracle, pristine_db, duration_s)
+    s = competition.score(submission, build, oracle, pristine_db, duration_s, cost_usd)
     c._write("score.json", json.dumps({"team": team, **s}, indent=2))
     md = competition.score_markdown(team, s)
     c._write("score.md", md)
     print(md)
     c.set_outputs(total=s["total"])
+
+
+@ci.command("key-usage")
+def ci_key_usage() -> None:
+    """Print what the OpenRouter key in LLM_API_KEY has spent, in USD, once the number settles."""
+    import os
+
+    from factory import competition
+
+    print(f"{competition.key_usage(os.environ['LLM_API_KEY']):.6f}")
 
 
 # -------------------------------------------------------------------- benchmark

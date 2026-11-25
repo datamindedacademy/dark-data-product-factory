@@ -2,11 +2,8 @@ description: >
   Implements a data product spec as dbt models in the warehouse project and
   checks the result against the spec's acceptance checks.
 model: default
-effort: medium
 max_turns: 80
-max_budget_usd: 4.0
 system_prompt: system_prompt.md
-system_prompt_mode: replace
 prompt: prompt.md
 builtin_tools: [Read, Write, Edit, Glob, Grep, Bash]
 mcp:

@@ -20,7 +20,7 @@ and checkup (the Fernhill standards metrics).
   governance does not bounce the product back.
 - Make "done" explicit: build passes, acceptance passes, checkup clean.
 - Reuse over re-derivation: point the agent at the core marts.
-- Cost: does it need the biggest model? Try `claude-sonnet-5-5` with a good skill.
+- Cost: does it need the biggest model? Try a small open model with a good skill.
 - Stretch: a planner subagent that writes the model design before any SQL.
 
 **Benchmark ideas.** A spec that requires a spine (dates with no activity), one where the

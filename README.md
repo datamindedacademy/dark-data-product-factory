@@ -19,24 +19,23 @@ six stores in BE/NL/FR/UK). Its warehouse is a dbt project on DuckDB with two ye
 synthetic but realistic, messy data (`warehouse/`). Dashboards are built with
 [dbt charts](https://docs.getdbt.com/guides/dbt-charts) (`dct`).
 
-Every station has a working **baseline agent** built with the Claude Agent SDK
+Every station has a working **baseline agent** built with [Agno](https://docs.agno.com)
 (`agents/<station>/`) and a **benchmark** (`benchmark/cases/<station>/`) that scores it.
 The baselines are deliberately plain. Your job: take one agent at a time through the loop
 (benchmark, read the traces, change its context, repeat) and improve the whole line, with
-numbers to show for it. Agno (`agents/intake-agno/` is the starter), skills and MCP servers
-are there to help, not required. See [agents/README.md](agents/README.md).
+numbers to show for it. Skills, tools and MCP servers are there to help, not required. See [agents/README.md](agents/README.md).
 
 ## Quick start
 
 In a GitHub Codespace the devcontainer installs everything, builds the warehouse and starts Phoenix; it asks for an OpenRouter key (`LLM_API_KEY`). On a laptop:
 
 ```bash
-uv sync --extra dev          # Python 3.15 (see .python-version), installs dbt-duckdb, dbt charts, checkup, the Agent SDK, Agno
+uv sync --extra dev          # Python 3.15 (see .python-version), installs dbt-duckdb, dbt charts, checkup, Agno
 source .venv/bin/activate
 factory setup                # generates the warehouse and builds the dbt project (~10 s)
 pytest -q                    # checks the benchmark itself, no LLM calls (~4 min)
 
-export LLM_API_KEY=...               # OpenRouter key, as in the other courses (or ANTHROPIC_API_KEY, or a `claude` login)
+export LLM_API_KEY=...               # an OpenRouter key, as in the other courses
 make phoenix                         # in a second terminal: every agent run becomes a trace at http://localhost:6006
 factory bench list
 factory run intake --case intake-01-category        # one run, prints the grades

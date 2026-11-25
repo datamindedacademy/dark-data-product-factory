@@ -137,7 +137,8 @@ def _scale(x: float | None, lo_hi: tuple[float, float]) -> float:
     return 0.0 if x is None else max(0.0, min(1.0, (hi - x) / (hi - lo)))
 
 
-def score(submission: Path, build: Path, oracle: Path, pristine_db: Path, duration_s: float | None = None) -> dict[str, Any]:
+def score(submission: Path, build: Path, oracle: Path, pristine_db: Path, duration_s: float | None = None,
+          cost_usd: float | None = None) -> dict[str, Any]:
     """Score one team. Runs no team code: reads YAML/JSON and queries the built DuckDB file read-only."""
     from benchmark.stages.bi import answered_questions
 
@@ -187,13 +188,16 @@ def score(submission: Path, build: Path, oracle: Path, pristine_db: Path, durati
     detail["dashboard"] = (f"validate {'ok' if b.get('dct_validate') else 'failed'}, render "
                            f"{'ok' if b.get('dct_render') else 'failed'}, answered correctly {sorted(right)} of {sorted(wanted)}")
 
-    # Cost comes from the traces, which the run job (team code) wrote: self-reported. A station without a
-    # cost counts as the worst cost. Duration is measured by the workflow, outside the team's reach.
+    # In the final, cost_usd is the spend of the team's final-only OpenRouter key, read by the grade job
+    # (key_usage): measured, outside the team's reach, like the duration. Without it (practice runs) the cost
+    # comes from the traces, which team code wrote: self-reported. A missing cost counts as the worst cost.
     runs = [json.loads(p.read_text()) for p in sorted((submission / "traces").rglob("summary.json"))]
     costs = [r.get("total_cost_usd") for r in runs]
-    cost = sum(costs) if runs and all(c is not None for c in costs) else None
+    reported = sum(costs) if runs and all(c is not None for c in costs) else None
+    cost = cost_usd if cost_usd is not None else reported
     part["efficiency"] = part["correctness"] * (_scale(cost, COST_USD) + _scale(duration_s, DURATION_S)) / 2
     detail["efficiency"] = (f"${cost:.2f}" if cost is not None else "cost not reported") + \
+        (" (measured on the key)" if cost_usd is not None else " (from the traces)") + \
         (f", {duration_s / 60:.0f} min" if duration_s is not None else ", duration unknown") + \
         f", scaled by correctness; {len(runs)} agent runs"
 
@@ -204,7 +208,7 @@ def score(submission: Path, build: Path, oracle: Path, pristine_db: Path, durati
 
     points = {k: round(POINTS[k] * part[k], 1) for k in POINTS}
     return {"total": round(sum(points.values()), 1), "points": points, "max": POINTS, "detail": detail,
-            "cost_usd": cost, "duration_s": duration_s,
+            "cost_usd": cost, "reported_cost_usd": reported, "duration_s": duration_s,
             "agno_stations": sorted({r.get("stage") or r.get("agent") for r in runs if r.get("framework") == "agno"})}
 
 
@@ -213,3 +217,23 @@ def score_markdown(team: str, s: dict[str, Any]) -> str:
     lines += [f"| {k} | {s['points'][k]:g} / {s['max'][k]} | {s['detail'][k].replace('|', '/')} |" for k in s["max"]]
     lines += ["", "Stations built with Agno: " + (", ".join(s["agno_stations"]) or "**none**")]
     return "\n".join(lines) + "\n"
+
+
+def key_usage(key: str, settle_s: float = 5, tries: int = 12) -> float:
+    """What an OpenRouter key has spent so far, in USD. Waits until two reads agree: usage can lag a few seconds."""
+    import time
+    import urllib.request
+
+    def read() -> float:
+        req = urllib.request.Request("https://openrouter.ai/api/v1/key", headers={"Authorization": f"Bearer {key}"})
+        with urllib.request.urlopen(req, timeout=20) as r:
+            return float(json.load(r)["data"]["usage"])
+
+    last = read()
+    for _ in range(tries):
+        time.sleep(settle_s)
+        now = read()
+        if now == last:
+            return now
+        last = now
+    return last

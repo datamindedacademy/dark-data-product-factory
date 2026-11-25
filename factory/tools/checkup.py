@@ -25,8 +25,6 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
-from claude_agent_sdk import create_sdk_mcp_server, tool
-
 MECHANICAL_RULES = ["GOV-001", "GOV-002", "GOV-003", "GOV-004", "GOV-005", "GOV-007", "GOV-009"]
 JUDGEMENT_RULES = ["GOV-006", "GOV-008", "GOV-010"]
 
@@ -194,25 +192,21 @@ def checkup_cli(project_dir: Path, product: str | None = None, materializer: str
     return sh(cmd, project_dir, check=False)
 
 
-def build_server(project_dir: Path):
-    """MCP server exposing checkup to agents."""
+def build_tool(project_dir: Path):
+    """checkup as a function an Agno agent can call."""
     from factory.workspace import dbt  # local import to avoid a cycle
 
-    @tool("checkup",
-          "Run checkup (computational governance) on the dbt project with warehouse/checkup.yaml: "
-          "project health metrics from checkup-dbt plus one metric per mechanical Fernhill rule "
-          "(GOV-001..005, 007, 009; value = number of violations, diagnostics list model or model.column). "
-          "Re-parses the project first. Pass `product` to scope the Fernhill rules to one data product. "
-          "GOV-006, 008, 010 and 011 are not covered.",
-          {"product": str})
-    async def checkup(args: dict[str, Any]) -> dict[str, Any]:
+    def checkup(product: str = "") -> str:
+        """Run checkup (computational governance) on the dbt project with warehouse/checkup.yaml: project health
+        metrics from checkup-dbt plus one metric per mechanical Fernhill rule (GOV-001..005, 007, 009; value =
+        number of violations, diagnostics list model or model.column). Re-parses the project first. Pass `product`
+        to scope the Fernhill rules to one data product. GOV-006, 008, 010 and 011 are not covered."""
         parsed = dbt(project_dir.parent, "parse", "--quiet")
         if parsed.returncode != 0:
-            return {"content": [{"type": "text", "text": "dbt parse failed:\n" + parsed.stdout[-3000:]}], "is_error": True}
-        res = checkup_cli(project_dir, args.get("product") or None)
+            return "error: dbt parse failed:\n" + parsed.stdout[-3000:]
+        res = checkup_cli(project_dir, product or None)
         if res.returncode != 0 or not res.stdout.strip():
-            return {"content": [{"type": "text", "text": "checkup failed:\n" + (res.stdout + res.stderr)[-3000:]}],
-                    "is_error": True}
-        return {"content": [{"type": "text", "text": res.stdout}]}
+            return "error: checkup failed:\n" + (res.stdout + res.stderr)[-3000:]
+        return res.stdout
 
-    return create_sdk_mcp_server("governance", tools=[checkup])
+    return checkup

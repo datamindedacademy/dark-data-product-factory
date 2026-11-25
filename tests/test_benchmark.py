@@ -14,7 +14,7 @@ from benchmark.harness import STAGES
 from factory import paths, workspace
 from factory.acceptance import run_acceptance
 from factory.contracts import DataProductSpec
-from factory.runner import AgentConfig, build_options
+from factory.runner import AgentConfig, default_agent
 from factory.tools import checkup
 
 ALL_CASES = [(s, c) for s in STAGES for c in load_cases(s)]
@@ -78,17 +78,24 @@ def test_checkup_finds_exactly_the_mechanical_violations(tmp_path):
 
 
 @pytest.mark.parametrize("agent", sorted(p.name for p in paths.AGENTS.iterdir() if (p / "agent.yaml").exists()))
-def test_agent_configs_build(agent, tmp_path):
+def test_agent_configs_build(agent, tmp_path, monkeypatch):
+    monkeypatch.setenv("LLM_API_KEY", "sk-or-test")  # building an agent makes no call
     cfg = AgentConfig.load(paths.AGENTS / agent)
     ws = _ws(tmp_path)
-    workspace.install_agent_context(ws, cfg.dir, cfg.skills)
     assert (cfg.dir / cfg.prompt).exists()
-    if (cfg.dir / "agent.py").exists():  # an Agno agent
+    if (cfg.dir / "agent.py").exists():  # the team builds it
         from factory.runner import _load
 
         assert hasattr(_load(cfg.dir / "agent.py").build_agent(ws, cfg), "arun")
-    else:
-        assert build_options(cfg, ws).cwd == str(ws)
+        return
+    agent = default_agent(ws, cfg)
+    names = {getattr(t, "__name__", None) or type(t).__name__ for t in agent.tools}
+    if "Bash" in cfg.builtin_tools:
+        assert "bash" in names
+    for tool in (cfg.mcp or {}).get("warehouse") or []:
+        assert tool in names  # the prompts name run_sql
+    if (cfg.mcp or {}).get("governance"):
+        assert "checkup" in names
 
 
 def test_e2e_line_with_scripted_agents(tmp_path, monkeypatch):
@@ -141,28 +148,6 @@ def test_e2e_line_with_scripted_agents(tmp_path, monkeypatch):
     assert {p.name for p in sub.iterdir()} >= {"spec.yaml", "models", "board.yml", "e2e_summary.json"}
 
 
-def test_tracer_records_tools_and_cost(tmp_path):
-    import json
-
-    from claude_agent_sdk import (AssistantMessage, ResultMessage, SystemMessage, TextBlock, ToolResultBlock,
-                                  ToolUseBlock, UserMessage)
-
-    from factory.tracing import Tracer
-
-    t = Tracer(tmp_path, {"agent": "x"})
-    t.on_message(SystemMessage(subtype="init", data={"model": "m", "tools": ["Bash"], "skills": []}))
-    t.on_message(AssistantMessage(content=[TextBlock(text="hi"), ToolUseBlock(id="1", name="Bash", input={"command": "ls"})],
-                                  model="m"))
-    t.on_message(UserMessage(content=[ToolResultBlock(tool_use_id="1", content="boom", is_error=True)]))
-    t.on_message(ResultMessage(subtype="success", duration_ms=10, duration_api_ms=5, is_error=False, num_turns=1,
-                               session_id="s", total_cost_usd=0.12, usage={"input_tokens": 5, "output_tokens": 7}))
-    s = t.close()
-    assert s["tool_calls"] == {"Bash": 1} and s["tool_errors"] == {"Bash": 1}
-    assert s["total_cost_usd"] == 0.12 and s["status"] == "ok"
-    types = [json.loads(line)["type"] for line in (tmp_path / "trace.jsonl").read_text().splitlines()]
-    assert types == ["init", "assistant_text", "tool_use", "tool_result", "result"]
-
-
 def test_checkup_tool_runs_real_checkup(tmp_path):
     """The governance agent's tool shells out to `checkup run` with the Fernhill plugin."""
     case = next(c for c in load_cases("governance") if c.id == "governance-02-mechanical")
@@ -175,8 +160,8 @@ def test_checkup_tool_runs_real_checkup(tmp_path):
     assert "fernhill_gov001_mart_naming" in res.stdout
 
 
-def test_agno_agent_is_traced_like_an_sdk_agent(tmp_path):
-    """An agent dir with agent.py runs through Agno; its RunOutput becomes the same trace and summary."""
+def test_agno_run_becomes_a_trace(tmp_path):
+    """An agent dir with agent.py: its RunOutput becomes the trace and the summary."""
     import asyncio
     import json
 
@@ -184,7 +169,7 @@ def test_agno_agent_is_traced_like_an_sdk_agent(tmp_path):
 
     agent = tmp_path / "fake-agno"
     agent.mkdir()
-    (agent / "agent.yaml").write_text("model: claude-sonnet-5-5\noutputs: [output/x.txt]\n")
+    (agent / "agent.yaml").write_text("model: google/gemma-4-31b-it\noutputs: [output/x.txt]\n")
     (agent / "system_prompt.md").write_text("sys")
     (agent / "prompt.md").write_text("work in $workspace")
     (agent / "agent.py").write_text('''
@@ -197,7 +182,7 @@ class Fake:
     async def arun(self, prompt):
         assert "$workspace" not in prompt
         return RunOutput(content="done", status=RunStatus.completed,
-                         metrics=RunMetrics(input_tokens=1_000_000, output_tokens=100_000),
+                         metrics=RunMetrics(input_tokens=1_000_000, output_tokens=100_000, cost=0.42),
                          messages=[Message(role="user", content=prompt), Message(role="assistant", content="querying"),
                                    Message(role="tool", tool_name="run_sql", tool_args={"sql": "select 1"}, tool_call_id="t1",
                                            content="boom", tool_call_error=True),
@@ -212,7 +197,7 @@ def build_agent(ws, cfg):
     summary = asyncio.run(run_agent(agent, ws, run_dir))
     assert summary["framework"] == "agno" and summary["status"] == "ok" and summary["num_turns"] == 2
     assert summary["tool_calls"] == {"run_sql": 1} and summary["tool_errors"] == {"run_sql": 1}
-    assert summary["total_cost_usd"] == 3.0  # 1M in * $2 + 0.1M out * $10: Agno reports no cost, we price the tokens
+    assert summary["total_cost_usd"] == 0.42  # what OpenRouter reported
     assert summary["final_text"] == "done" and summary["missing_outputs"] == ["output/x.txt"]
     events = [json.loads(line)["type"] for line in (tmp_path / "run" / "trace.jsonl").read_text().splitlines()]
     assert events == ["assistant_text", "tool_use", "tool_result", "assistant_text", "result"]

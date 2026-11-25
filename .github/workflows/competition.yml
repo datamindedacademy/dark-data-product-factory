@@ -16,7 +16,7 @@ on:
   workflow_dispatch:
     inputs:
       team:
-        description: "Team name (A-Z, 0-9, _). Also selects the secret ANTHROPIC_API_KEY_<TEAM>."
+        description: "Team name (A-Z, 0-9, _). Also selects the secret LLM_API_KEY_<TEAM>."
         required: true
       repo:
         description: "The team's repository (owner/name)"
@@ -77,7 +77,7 @@ jobs:
       - name: Run the team's factory
         timeout-minutes: 45
         env:
-          ANTHROPIC_API_KEY: ${{ secrets[format('ANTHROPIC_API_KEY_{0}', inputs.team)] || secrets.ANTHROPIC_API_KEY }}
+          LLM_API_KEY: ${{ secrets[format('LLM_API_KEY_{0}', inputs.team)] || secrets.LLM_API_KEY }}
           FACTORY_MODEL: ${{ vars.FACTORY_MODEL }}
         run: factory e2e --issue "$RUNNER_TEMP/issue.md"   # rework limit: the team's agents/line.yaml
       - name: Export the submission
@@ -163,13 +163,17 @@ jobs:
       - name: Score
         env:
           GH_TOKEN: ${{ github.token }}
+          # The team's final-only key: its total spend is the cost of this run. This job runs no team code.
+          LLM_API_KEY: ${{ secrets[format('LLM_API_KEY_{0}', inputs.team)] }}
         run: |
           mkdir -p submission build
           spec="benchmark/products/$ORACLE/spec.yaml"; [ -f "$spec" ] || spec="oracle/products/$ORACLE/spec.yaml"
           # Wall-clock time of the run job as GitHub measured it: the team cannot influence this number.
           duration=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/jobs" \
             --jq '.jobs[] | select(.name == "run") | (.completed_at | fromdate) - (.started_at | fromdate)')
-          factory ci score submission build --oracle "$spec" --duration-s "$duration" --team "$TEAM"
+          # Cost as OpenRouter measured it on that key; the traces' own figure is only a fallback.
+          cost=""; [ -n "$LLM_API_KEY" ] && cost=$(factory ci key-usage) || true
+          factory ci score submission build --oracle "$spec" --duration-s "$duration" ${cost:+--cost-usd "$cost"} --team "$TEAM"
           cat factory-out/score.md >> "$GITHUB_STEP_SUMMARY"
           if [ -n "$PR" ]; then gh pr comment "$PR" --repo "$GITHUB_REPOSITORY" --body-file factory-out/score.md; fi
       - uses: actions/upload-artifact@v4

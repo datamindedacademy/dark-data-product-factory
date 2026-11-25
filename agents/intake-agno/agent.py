@@ -1,4 +1,4 @@
-"""Starter Agno agent (https://docs.agno.com) for the intake station.
+"""The intake agent written out as an Agno agent (https://docs.agno.com).
 
 The factory runner calls ``build_agent(ws, cfg)`` and then ``agent.arun(<rendered prompt.md>)``.
 ``ws`` is the run's workspace (a copy of the company repo), ``cfg`` is this directory's agent.yaml.
@@ -10,10 +10,10 @@ Everything else is yours: tools, skills, MCP servers, model, a team of agents.
 from pathlib import Path
 
 from agno.agent import Agent
-from agno.models.anthropic import Claude
 from agno.tools.file import FileTools
-from agno.tools.shell import ShellTools
 
+from factory import llm
+from factory.runner import bash_tool
 from factory.tools.warehouse import run_sql_text
 
 
@@ -23,9 +23,9 @@ def build_agent(ws: Path, cfg) -> Agent:
         return run_sql_text(ws / "warehouse" / "warehouse.duckdb", sql, limit)
 
     return Agent(
-        model=Claude(id=cfg.model),
+        model=llm.model(cfg.model),
         instructions=(cfg.dir / cfg.system_prompt).read_text(),
-        tools=[run_sql, FileTools(base_dir=ws), ShellTools(base_dir=ws)],
+        tools=[run_sql, FileTools(base_dir=ws), bash_tool(ws)],
         tool_call_limit=cfg.max_turns,
         telemetry=False,
         # Block 2 - skills:  skills=Skills(loaders=[LocalSkills(str(cfg.dir / "skills"))])   (from agno.skills)

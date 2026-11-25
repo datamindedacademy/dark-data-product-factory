@@ -93,25 +93,6 @@ wheels = [
 ]
 
 [[package]]
-name = "anthropic"
-version = "2.12.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "anyio" },
-    { name = "docstring-parser" },
-    { name = "httpx2" },
-    { name = "jiter" },
-    { name = "opentelemetry-api" },
-    { name = "pydantic" },
-    { name = "sniffio" },
-    { name = "typing-extensions" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/26/05/fdf767b3da8fc8e2d78eef15c98a5ead03be2753b4e9cfcda58f0995f0b0/anthropic-2.12.0.tar.gz", hash = "sha256:571e6d250bcd6bbaf5fd5f3c764b8e11af9901ad2e44b025f8e773c6cc7a7173", size = 2025823, upload-time = "2026-11-20T15:57:03.541Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/4a/a6/1cde7a75d1be07582f6b3c2dd12ddba9d1fb278f5b9685f30dbf6b39dc2c/anthropic-2.12.0-py3-none-any.whl", hash = "sha256:8631e3880ee18b0f87ce61d5d08e67804200463cf27c4182024715e232c99ba6", size = 2556840, upload-time = "2026-11-20T15:57:01.546Z" },
-]
-
-[[package]]
 name = "anyio"
 version = "4.16.0"
 source = { registry = "https://pypi.org/simple" }
@@ -344,25 +325,6 @@ wheels = [
 ]
 
 [[package]]
-name = "claude-agent-sdk"
-version = "0.2.178"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "anyio" },
-    { name = "jsonschema" },
-    { name = "mcp" },
-    { name = "sniffio" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/bb/96/029c76e62b48c7eef3982873f6882d8e5f94a8eaa293392a91229cc0b87e/claude_agent_sdk-0.2.178.tar.gz", hash = "sha256:b59aca6ba61d43a6d78f0ad03a2230485a26a73d7f5e7b60e9d5e8a70cdba8f2", size = 400217, upload-time = "2026-11-04T00:52:25.514Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/d2/cd/73bf0d3b6ec1456461e7e83e900c3bcf1ef6d767530dac1ad4590cc2ea74/claude_agent_sdk-0.2.178-py3-none-macosx_11_0_arm64.whl", hash = "sha256:7a20f490cfdd7d7cb9a70b3500cb0d9d026420d987e25a10667c638c5dfe036d", size = 138228664, upload-time = "2026-11-04T00:52:32.383Z" },
-    { url = "https://files.pythonhosted.org/packages/ba/b6/62e1a2d67ff4561cf31758b4332594086979c849eede9ab21950601af24e/claude_agent_sdk-0.2.178-py3-none-macosx_11_0_x86_64.whl", hash = "sha256:c944ff5f0bac523b8c77d8d2f7913d533efc983e42eece1502fe74aa3a4a0482", size = 145514246, upload-time = "2026-11-04T00:52:39.069Z" },
-    { url = "https://files.pythonhosted.org/packages/bb/10/c5d2908e1bded45de8b69b44bc5d76f431534e18cca99d192a755d04801e/claude_agent_sdk-0.2.178-py3-none-manylinux_2_17_aarch64.whl", hash = "sha256:98fcd5ea6b591d14a65580bee3df3f5fa7c75ad68a44ff81780177d2ed8db2a3", size = 149927469, upload-time = "2026-11-04T00:52:45.46Z" },
-    { url = "https://files.pythonhosted.org/packages/49/5f/fb5dc93b604e8c55bd0da2465ba075b28e6ba4f0b0cda30cd15649c87e7d/claude_agent_sdk-0.2.178-py3-none-manylinux_2_17_x86_64.whl", hash = "sha256:1d5e6d2cced242b9d74658ec90d96936a7c9db5867b85705ae52ec0736060146", size = 150300143, upload-time = "2026-11-04T00:52:52.87Z" },
-    { url = "https://files.pythonhosted.org/packages/46/9b/2a8cf8def2c32bd296d6380d08dafef63969ca9eb0c5674a7fa8cce4d1d6/claude_agent_sdk-0.2.178-py3-none-win_amd64.whl", hash = "sha256:b31f5b4076b6a0ce138716f03d04ab9899fa8b4bde7d7760f9862bdcf9b2786b", size = 151962195, upload-time = "2026-11-04T00:53:00.908Z" },
-]
-
-[[package]]
 name = "click"
 version = "8.5.0"
 source = { registry = "https://pypi.org/simple" }
@@ -460,18 +422,16 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "agno", extra = ["mcp"] },
-    { name = "anthropic" },
     { name = "arize-phoenix-otel" },
     { name = "checkup" },
     { name = "checkup-dbt" },
-    { name = "claude-agent-sdk" },
     { name = "click" },
     { name = "dbt-charts", extra = ["mcp"] },
     { name = "dbt-core" },
     { name = "dbt-duckdb" },
     { name = "duckdb" },
+    { name = "openai" },
     { name = "openinference-instrumentation-agno" },
-    { name = "openinference-instrumentation-claude-agent-sdk" },
     { name = "pydantic" },
     { name = "pyyaml" },
     { name = "rich" },
@@ -485,18 +445,16 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "agno", extras = ["mcp"], specifier = ">=3.0.5" },
-    { name = "anthropic", specifier = ">=2.12.0" },
     { name = "arize-phoenix-otel", specifier = ">=0.17.3" },
     { name = "checkup", specifier = ">=0.8" },
     { name = "checkup-dbt", specifier = ">=0.5" },
-    { name = "claude-agent-sdk", specifier = ">=0.2.178" },
     { name = "click", specifier = ">=8.1" },
     { name = "dbt-charts", extras = ["mcp"], specifier = ">=0.11.1" },
     { name = "dbt-core", specifier = ">=1.10,<2" },
     { name = "dbt-duckdb", specifier = ">=1.9" },
     { name = "duckdb", specifier = ">=1.1" },
+    { name = "openai", specifier = ">=2" },
     { name = "openinference-instrumentation-agno", specifier = ">=1.2.2" },
-    { name = "openinference-instrumentation-claude-agent-sdk", specifier = ">=0.1.32" },
     { name = "pydantic", specifier = ">=2.7" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8" },
     { name = "pyyaml", specifier = ">=6.0.4" },
@@ -1477,6 +1435,23 @@ wheels = [
 ]
 
 [[package]]
+name = "openai"
+version = "3.59.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "anyio" },
+    { name = "httpx2" },
+    { name = "jiter" },
+    { name = "pydantic" },
+    { name = "sniffio" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/7d/ca/d9d1549c71723eb8fd2af7173b1c22ed065d10107b1b6438453a1b3f2ae2/openai-3.59.0.tar.gz", hash = "sha256:e4e57d5c28bed6efe6483c9f61ba59be13fa16edde4b771cdaf5c7ca70bc9ff1", size = 2429198, upload-time = "2026-11-24T19:19:44.198Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/76/05/a7afe3729b624e2a19215463c73778208a916e57eb7d33e0fb885bba8160/openai-3.59.0-py3-none-any.whl", hash = "sha256:e613537ac5f082c58f652a536ed4215b19a29d360c4348cca86f0e563f7a0b1f", size = 2454193, upload-time = "2026-11-24T19:19:42.189Z" },
+]
+
+[[package]]
 name = "openapi-pydantic"
 version = "0.6.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1519,24 +1494,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/84/9a/48347839767a3ee5011b1130d0bfac04d27c5aa585996ccdd50b5c7b694b/openinference_instrumentation_agno-1.2.5.tar.gz", hash = "sha256:3bd94902065ddd4cf3b32614fd4369253bea02312e914bed9b456baaf311f822", size = 28515, upload-time = "2026-11-21T20:14:06.718Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/55/b3/0fea90cfac847dbc638a891a501fc22e2847b8579705b246dc893de9b369/openinference_instrumentation_agno-1.2.5-py3-none-any.whl", hash = "sha256:79e5461d43f579a2113ef41a1f461d3182bb4b1ebc8eb5bbbc01a223401bf7a1", size = 34140, upload-time = "2026-11-21T20:14:05.171Z" },
-]
-
-[[package]]
-name = "openinference-instrumentation-claude-agent-sdk"
-version = "0.1.32"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "openinference-instrumentation" },
-    { name = "openinference-semantic-conventions" },
-    { name = "opentelemetry-api" },
-    { name = "opentelemetry-instrumentation" },
-    { name = "opentelemetry-semantic-conventions" },
-    { name = "typing-extensions" },
-    { name = "wrapt" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/a2/68/ecc9064a9cb70f1ee03f13bb489c9ddebe004c7e3130abfc40aa2240556b/openinference_instrumentation_claude_agent_sdk-0.1.32.tar.gz", hash = "sha256:c2905c0cbdf80c27176586b23c38117632178a29921a04db1cade23ba877532a", size = 17912, upload-time = "2026-11-21T20:14:09.332Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/95/ab/fc813493e0fc382ce8b4387fe917de28843133a765d9a9c923687babd70e/openinference_instrumentation_claude_agent_sdk-0.1.32-py3-none-any.whl", hash = "sha256:210666042cced02cb7a828b27f79a27240fcc55f47b10ad657db3a8a062b28c3", size = 19504, upload-time = "2026-11-21T20:14:08.06Z" },
 ]
 
 [[package]]

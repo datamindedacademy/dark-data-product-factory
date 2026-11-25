@@ -57,6 +57,9 @@ def test_planted_bug_and_unreported_cost_lose_points(tmp_path, monkeypatch):
     assert 0 < s["points"]["correctness"] < competition.POINTS["correctness"], s["detail"]
     assert s["points"]["interface"] == competition.POINTS["interface"]
     assert s["cost_usd"] is None and s["points"]["efficiency"] < competition.POINTS["efficiency"] / 2
+    # In the final the grade job measures the cost on the team's key: a forged trace changes nothing.
+    m = competition.score(sub, tmp_path / "build", ORACLE, paths.WAREHOUSE_DB, duration_s=300, cost_usd=20.0)
+    assert m["cost_usd"] == 20.0 and m["reported_cost_usd"] is None and "measured on the key" in m["detail"]["efficiency"]
 
 
 def test_empty_submission_scores_zero(tmp_path, monkeypatch):

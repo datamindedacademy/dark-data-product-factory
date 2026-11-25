@@ -29,7 +29,7 @@ permissions:
 env:
   ISSUE: ${{ github.event.issue.number || inputs.issue }}
   BRANCH: factory/issue-${{ github.event.issue.number || inputs.issue }}
-  ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+  LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
   # Pushes and PRs made with the default GITHUB_TOKEN do not trigger other workflows.
   # FACTORY_TOKEN (GitHub App token or fine-grained PAT) lets factory-pr.yml pick the PR up.
   GH_TOKEN: ${{ secrets.FACTORY_TOKEN || github.token }}

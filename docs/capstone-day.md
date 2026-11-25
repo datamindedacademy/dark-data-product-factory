@@ -138,9 +138,9 @@ Preparation, secrets, the hidden oracle, the freeze-and-reveal commands and the 
   change measured. A team stuck on tooling goes back to the baseline agent and changes its prompt.
 - Pull requests from forks need a maintainer's approval before the repository's own checks
   (`ci.yml`) run on them.
-- The default model is `claude-haiku-5-5`, on purpose: the baseline line should show how the factory
-  works and still leave most of the points on the table. An `agent.yaml` can set its own model
-  (`model: claude-opus-5-5`); that is a lever, and the cheapest one, so expect every team to try it.
-  Do not set `FACTORY_MODEL` for the final: it overrides only `model: default`, but it would make
-  the baseline line a moving target. Costs are recorded per run, and Agno runs are priced from token counts
-  (`factory/tracing.py`): a model that is not in that table has no cost and scores zero on cost.
+- The default model is `google/gemma-4-31b-it` (OpenRouter), small, open and cheap on purpose: the baseline line
+  should show how the factory works and still leave most of the points on the table. An `agent.yaml`
+  can set any OpenRouter model (`model: qwen/qwen4-max`); that is a lever, and the cheapest one, so
+  expect every team to try it. Do not set `FACTORY_MODEL` for the final: it overrides only
+  `model: default`, but it would make the baseline line a moving target. Costs are what OpenRouter
+  reports per run, the same way for every model.

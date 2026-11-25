@@ -2,12 +2,9 @@ description: >
   Reads a data product request (GitHub issue), investigates the warehouse and
   writes an executable spec: purpose, business questions, acceptance checks,
   output models, data quality notes.
-model: default            # FACTORY_MODEL env var, else claude-haiku-5-5
-effort: medium
+model: default            # FACTORY_MODEL env var, else google/gemma-4-31b-it (an OpenRouter model id)
 max_turns: 60
-max_budget_usd: 3.0
 system_prompt: system_prompt.md
-system_prompt_mode: replace   # or "append" to keep Claude Code's own system prompt
 prompt: prompt.md
 builtin_tools: [Read, Write, Edit, Glob, Grep, Bash]
 mcp:

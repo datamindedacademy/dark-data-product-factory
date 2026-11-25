@@ -1,6 +1,6 @@
 description: >
-  Starter Agno agent for the intake station: the same job and prompts as agents/intake,
-  built with Agno instead of the Claude Agent SDK. Copy this directory and make it yours.
+  Example agent.py for the intake station: the same job and prompts as agents/intake,
+  with the Agno agent written out in Python. Copy this directory when you want full control.
 model: default
 max_turns: 60                          # passed to Agno as tool_call_limit in agent.py
 system_prompt: ../intake/system_prompt.md   # copy these two next to agent.py once you start editing them

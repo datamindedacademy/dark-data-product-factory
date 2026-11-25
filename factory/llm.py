@@ -1,40 +1,23 @@
-"""Use an OpenRouter key (`LLM_API_KEY`, as in the other bootcamp courses) for every agent.
+"""The model behind every agent: OpenRouter, with the key in `LLM_API_KEY`, as in the other bootcamp courses.
 
-When `LLM_API_KEY` is set and no Anthropic credentials are, point the Anthropic clients at OpenRouter's
-Anthropic-compatible endpoint (https://openrouter.ai/docs/guides/community/anthropic-agent-sdk.md).
-Both the Claude Agent SDK and Agno's `Claude` model read these variables. An `ANTHROPIC_API_KEY` or a
-`claude` login works as before.
+Model ids are OpenRouter's (https://openrouter.ai/models), e.g. `google/gemma-4-31b-it` or `google/gemma-4-31b-it`.
+OpenRouter reports the cost of every call, so every model is priced the same way.
 """
 
 from __future__ import annotations
 
 import os
-import re
 
-OPENROUTER = "https://openrouter.ai/api"
-
-
-def configure() -> None:
-    key = os.getenv("LLM_API_KEY") or os.getenv("OPENROUTER_API_KEY")
-    if key and not os.getenv("ANTHROPIC_API_KEY") and not os.getenv("ANTHROPIC_AUTH_TOKEN"):
-        os.environ.update(ANTHROPIC_BASE_URL=OPENROUTER, ANTHROPIC_AUTH_TOKEN=key, ANTHROPIC_API_KEY="")
+DEFAULT_MODEL = os.environ.get("FACTORY_MODEL") or "google/gemma-4-31b-it"  # small, open and cheap on purpose: the baseline leaves room
 
 
-def via_openrouter() -> bool:
-    return os.getenv("ANTHROPIC_BASE_URL", "").rstrip("/") == OPENROUTER
+def model(model_id: str, effort: str | None = None):
+    """An Agno model for one OpenRouter model id. `effort` (low | medium | high) only matters for reasoning models."""
+    from agno.models.openrouter import OpenRouter
 
-
-def model_id(model: str) -> str:
-    """claude-haiku-5-5 -> anthropic/claude-haiku-5.5 on OpenRouter; unchanged otherwise."""
-    if not via_openrouter() or "/" in model:
-        return model
-    return "anthropic/" + re.sub(r"-(\d+)-(\d+)$", r"-\1.\2", model)
-
-
-if __name__ == "__main__":
-    os.environ["ANTHROPIC_BASE_URL"] = OPENROUTER
-    assert model_id("claude-haiku-5-5") == "anthropic/claude-haiku-5.5"
-    assert model_id("anthropic/claude-opus-5.5") == "anthropic/claude-opus-5.5"
-    del os.environ["ANTHROPIC_BASE_URL"]
-    assert model_id("claude-haiku-5-5") == "claude-haiku-5-5"
-    print("ok")
+    key = os.environ.get("LLM_API_KEY") or os.environ.get("OPENROUTER_API_KEY")
+    if not key:
+        raise RuntimeError("set LLM_API_KEY to an OpenRouter API key")
+    # max_tokens: provider defaults are small, and a reasoning model that runs out mid-answer just stops
+    return OpenRouter(id=model_id, api_key=key, reasoning_effort=effort, max_tokens=16_000,
+                      extra_body={"usage": {"include": True}})

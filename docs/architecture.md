@@ -64,37 +64,32 @@ runner (the e2e line, the CI stations, the benchmark, the final scoring) only kn
 `run_agent(agent_dir, workspace, run_dir) -> summary` and the files the agent leaves behind, so
 the framework is a detail of the agent directory:
 
-- **`agent.py` present → an Agno agent.** The runner calls `build_agent(ws, cfg)` and
-  `await agent.arun(prompt)`. Tools, skills and MCP servers are whatever `agent.py` gives the
-  Agno `Agent`; `builtin_tools` and `mcp` in `agent.yaml` are ignored. `max_budget_usd` is not
-  enforced.
-- **otherwise → the Claude Agent SDK** (the baselines). The runner turns `agent.yaml` into
-  `ClaudeAgentOptions`:
+Every agent is an [Agno](https://docs.agno.com) agent.
 
-| agent.yaml | Agent SDK option |
+- **`agent.py` present →** the runner calls `build_agent(ws, cfg)`. Tools, skills and MCP servers
+  are whatever `agent.py` gives the `Agent`.
+- **otherwise →** the runner builds one from `agent.yaml` (`default_agent` in `factory/runner.py`):
+
+| agent.yaml | Agno |
 |---|---|
-| `model`, `effort`, `max_turns`, `max_budget_usd` | same names |
-| `system_prompt` + `system_prompt_mode` | `system_prompt` (string replaces Claude Code's prompt; `append` keeps it and appends) |
-| `builtin_tools` | `tools` + `allowed_tools` |
-| `mcp` | `mcp_servers`: in-process `warehouse` / `governance` tools, or dbt charts' own `dct` MCP server |
-| `skills` | `skills` - copied from `agents/<x>/skills/` into the workspace's `.claude/skills/` |
-| `tools.py` | extra in-process MCP tools (`build_tools(ws)` returning `@tool` functions) |
-| `CLAUDE.md` | copied to the workspace root, loaded because `setting_sources=["project"]` |
+| `model`, `effort` | `OpenRouter(id=model, reasoning_effort=effort)` (`factory/llm.py`) |
+| `max_turns` | `tool_call_limit` |
+| `system_prompt` (+ `CLAUDE.md`) | `instructions` |
+| `builtin_tools` | `FileTools(base_dir=workspace)` for Read, Write, Edit, Glob and Grep; a `bash` tool for Bash |
+| `mcp` | the `warehouse` and `governance` functions from `factory/tools/`, or `MCPTools` for dbt charts' `dct` server |
+| `skills` | `Skills(loaders=[LocalSkills(...)])` for each listed `agents/<x>/skills/<name>` |
+| `tools.py` | extra tools: `build_tools(ws)` returning plain functions |
 
-`setting_sources=["project"]` means nothing from the machine running the benchmark
-(your `~/.claude`) leaks into the agent: two people running the same agent directory get
-the same context. WebFetch/WebSearch are disabled.
+Every agent, also one from `agent.py`, gets a tool hook that refuses calls reaching outside the
+workspace (the repository holds the golden answers), and blocking tools run in a thread so review
+and governance really run in parallel.
 
 ## Traces (`factory/tracing.py`)
 
-`trace.jsonl` has one event per assistant text, tool call and tool result, plus `init`
-and `result` (cost, turns, tokens, duration). `summary.json` aggregates it and the
-benchmark adds `score` and `grades`. The line manager reads exactly these files.
-
-Agno runs produce the same events and summary (`framework: agno`), with three differences: the
-events are written when the run ends, so they all carry the end time; there is no `init` event;
-and the cost is computed from the token counts with the price table in `factory/tracing.py`,
-because Agno does not report a cost for Claude models.
+`trace.jsonl` has one event per assistant text, tool call and tool result, plus `result`
+(cost, turns, tokens). `summary.json` aggregates it and the benchmark adds `score` and `grades`.
+The line manager reads exactly these files. The events are written when the run ends, so they all
+carry the end time. The cost is what OpenRouter reports for the run, the same way for every team and model.
 
 ## Tools (`factory/tools/`)
 

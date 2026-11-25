@@ -2,11 +2,8 @@ description: >
   Checks a data product against the organisation's standards and reports every
   violation with its rule id.
 model: default
-effort: medium
 max_turns: 40
-max_budget_usd: 2.0
 system_prompt: system_prompt.md
-system_prompt_mode: replace
 prompt: prompt.md
 builtin_tools: [Read, Glob, Grep, Bash, Write]
 mcp:

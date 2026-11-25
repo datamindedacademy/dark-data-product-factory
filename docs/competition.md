@@ -61,7 +61,7 @@ Implemented in [`factory/competition.py`](../factory/competition.py), tested in
 | Interface | 5 | Fraction of the required models and columns that exist | yes |
 | Governance | 10 | `checkup` on the product, all rules it can check (GOV-001..010, the judgement ones as heuristics): `max(0, 1 - violations / 5)`; 0 when `dbt build` fails (a model or one of its tests) | yes |
 | Dashboard | 10 | One third each: `dct validate`, `dct render`, share of questions answered correctly (`Q1`... in query notes or chart titles of placed charts, *and* all of that question's hidden checks pass) | yes |
-| Efficiency | 15 | Correctness × mean of a cost score and a time score. Full marks up to $2 and 10 min, zero from $12 and 45 min, linear in between | time yes, cost self-reported |
+| Efficiency | 15 | Correctness × mean of a cost score and a time score. Full marks up to $2 and 10 min, zero from $12 and 45 min, linear in between | yes: time from GitHub, cost from the team's OpenRouter key |
 | Own benchmark | 10 | New cases under `benchmark/cases/` that are valid (doing nothing scores 0, oracle scores 1); 3 valid cases = full marks | yes |
 
 Efficiency is multiplied by correctness so that a fast factory that builds nothing earns nothing.
@@ -81,14 +81,18 @@ heads. [interviews.md](interviews.md) is the hand-out with those rules, given to
 kick-off; the baseline agents never see it. Base most of the oracle's checks on them. Measured on
 2026-11-22 with the hidden oracle (13 checks, 5 hidden rules): the Haiku baseline
 passes the 4 structural checks and fails the 9 that need the rules, about 40 / 100.
+TODO: re-measure. That run used the Claude Agent SDK baselines; the baselines are Agno agents now,
+so the score, and the cost and time thresholds of the efficiency score, need a new run.
 
 ## Runbook
 
 ### Weeks before
 
 1. Publish this repository as the organisers' repo. Teams get read access only: they fork.
-2. Secrets: `ANTHROPIC_API_KEY_<TEAM>` per team (team name in capitals, `A-Z0-9_`), each key with
-   a spend limit. `ANTHROPIC_API_KEY` is the fallback. `ORACLE_TOKEN`: read-only token for the
+2. Secrets: `LLM_API_KEY_<TEAM>` per team (team name in capitals, `A-Z0-9_`): a fresh OpenRouter key
+   with a spend limit, used for nothing but that team's final run. The grade job reads the key's
+   spend and scores it as the run's cost, so never dispatch a practice run with it (practice in the
+   organisers' repository uses `LLM_API_KEY`, the fallback). `ORACLE_TOKEN`: read-only token for the
    private oracle repository. Variable `ORACLE_REPO` (`owner/name`), optionally `FACTORY_MODEL`.
 3. Write the oracle in the private repo: `products/<id>/issue.md`, `spec.yaml`, `models/`,
    `board.yml`, like a product in `benchmark/products/`. Use tables the public products barely
@@ -139,10 +143,10 @@ and read the diff of their `agents/` directory.
   freeze could fetch a hand-made solution written after the reveal. The freeze makes this
   deliberate fraud that is visible in the PR diff, but only a runner with an egress allowlist
   would prevent it.
-- **Cost is self-reported.** Traces are written in the job that runs team code, and Agno runs are
-  priced from token counts (`factory/tracing.py`). A station without a cost counts as the worst
-  cost, but a forged trace is possible. Duration is measured by GitHub and is not forgeable. The
-  exposure is 5 points; check the winners against their key's spend.
+- **Cost is measured, not reported.** In the final the cost is the spend of the team's final-only
+  OpenRouter key, read by the grade job (`factory ci key-usage`), which runs no team code. The cost in
+  the traces is only a fallback, for practice runs and for a team without its own key. Duration is
+  measured by GitHub.
 - **"Built with Agno" is self-reported** for the same reason (`framework` in the traces, shown in
   the score table). Facilitators check it at the block 1 checkpoint and in the diff.
 - **Untrusted SQL runs in the build job.** dbt and dbt charts run with DuckDB's external access

@@ -1,4 +1,4 @@
-"""In-process MCP tools that give agents read access to the workspace warehouse.
+"""Tools that give agents read access to the workspace warehouse (plain functions for Agno).
 
 The baseline agents only get ``run_sql``. Giving an agent better data tools
 (schema browsing, column profiling, the dbt manifest, a semantic layer...) is
@@ -12,16 +12,8 @@ from pathlib import Path
 from typing import Any
 
 import duckdb
-from claude_agent_sdk import create_sdk_mcp_server, tool
 
 MAX_CELL = 200
-
-
-def _text(s: str, is_error: bool = False) -> dict[str, Any]:
-    out: dict[str, Any] = {"content": [{"type": "text", "text": s}]}
-    if is_error:
-        out["is_error"] = True
-    return out
 
 
 def _fmt(cols: list[str], rows: list[tuple], total: int | None = None) -> str:
@@ -56,20 +48,16 @@ def run_sql_text(db: Path, sql: str, limit: int = 50) -> str:
     return _fmt(cols, rows, n) if cols else "OK (no result set)"
 
 
-def build_server(db: Path, enabled: list[str] | None = None):
-    """Build the ``warehouse`` MCP server bound to one DuckDB file."""
+def build_tools(db: Path, enabled: list[str] | None = None) -> list:
+    """The warehouse tools bound to one DuckDB file, as functions an Agno agent can call."""
 
-    @tool("run_sql",
-          "Run a read-only DuckDB SQL query against the warehouse and return up to `limit` rows "
-          "(default 50) as a markdown table. Schemas: `raw` (landed source tables) and `main` "
-          "(dbt staging + mart models).",
-          {"sql": str, "limit": int})
-    async def run_sql(args: dict[str, Any]) -> dict[str, Any]:
-        text = run_sql_text(db, args["sql"], int(args.get("limit") or 50))
-        return _text(text, is_error=text.startswith("SQL error:"))
+    def run_sql(sql: str, limit: int = 50) -> str:
+        """Run a read-only DuckDB SQL query against the warehouse and return up to `limit` rows (default 50)
+        as a markdown table. Schemas: `raw` (landed source tables) and `main` (dbt staging + mart models)."""
+        return run_sql_text(db, sql, int(limit or 50))
 
-    @tool("list_tables", "List every table and view in the warehouse with its schema and row count.", {})
-    async def list_tables(args: dict[str, Any]) -> dict[str, Any]:
+    def list_tables() -> str:
+        """List every table and view in the warehouse with its schema and row count."""
         cols, rows, _ = query(db, """
             select table_schema, table_name, table_type
             from information_schema.tables
@@ -83,19 +71,16 @@ def build_server(db: Path, enabled: list[str] | None = None):
                 out.append((schema, name, kind, n))
         finally:
             con.close()
-        return _text(_fmt(["schema", "table", "type", "rows"], out))
+        return _fmt(["schema", "table", "type", "rows"], out)
 
-    @tool("describe_table",
-          "Columns, types, null fraction, distinct count and example values of one table "
-          "(`schema.table`, e.g. `raw.orders` or `main.fct_orders`).",
-          {"table": str})
-    async def describe_table(args: dict[str, Any]) -> dict[str, Any]:
-        table = args["table"]
+    def describe_table(table: str) -> str:
+        """Columns, types, null fraction, distinct count and example values of one table
+        (`schema.table`, e.g. `raw.orders` or `main.fct_orders`)."""
         try:
             cols, rows, _ = query(db, f"select column_name, data_type from information_schema.columns "
                                       f"where table_schema || '.' || table_name = '{table}' order by ordinal_position", 500)
             if not rows:
-                return _text(f"table {table!r} not found", is_error=True)
+                return f"error: table {table!r} not found"
             con = duckdb.connect(str(db), read_only=True)
             out = []
             try:
@@ -108,10 +93,9 @@ def build_server(db: Path, enabled: list[str] | None = None):
                     out.append((name, dtype, f"{nulls / total:.1%}" if total else "-", distinct, json.dumps(ex, default=str)[:160]))
             finally:
                 con.close()
-            return _text(f"{table}: {total} rows\n" + _fmt(["column", "type", "null %", "distinct", "examples"], out))
+            return f"{table}: {total} rows\n" + _fmt(["column", "type", "null %", "distinct", "examples"], out)
         except Exception as exc:  # noqa: BLE001
-            return _text(f"error: {exc}", is_error=True)
+            return f"error: {exc}"
 
     tools = {"run_sql": run_sql, "list_tables": list_tables, "describe_table": describe_table}
-    selected = [tools[n] for n in (enabled or tools)]
-    return create_sdk_mcp_server("warehouse", tools=selected)
+    return [tools[n] for n in (enabled or tools)]
