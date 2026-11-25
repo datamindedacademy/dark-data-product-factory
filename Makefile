@@ -16,4 +16,4 @@ baseline:           ## run every baseline agent 3x (costs API credits!)
 	for s in intake implement review governance bi line_manager; do .venv/bin/factory bench run $$s --repeat 3 --label baseline; done
 
 phoenix:            ## trace viewer at http://localhost:6006 (leave it running; agent runs show up there)
-	uvx --python 3.13 --from arize-phoenix phoenix serve
+	bash .devcontainer/start-phoenix.sh

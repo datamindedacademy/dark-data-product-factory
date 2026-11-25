@@ -1,0 +1,43 @@
+{
+  "name": "dark-data-product-factory",
+  "image": "mcr.microsoft.com/devcontainers/python:3.14-bookworm",
+  "features": {
+    "ghcr.io/va-h/devcontainers-features/uv:1": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+  "hostRequirements": { "cpus": 4 },
+  // Codespaces asks for this when the codespace is created. The factory sends every agent to
+  // OpenRouter with it (factory/llm.py), and opencode uses it too.
+  "secrets": {
+    "LLM_API_KEY": {
+      "description": "OpenRouter API key, used by the factory's agents and by opencode."
+    }
+  },
+  // The opencode installer only adds itself to ~/.bashrc; this puts it on the PATH of every shell.
+  "remoteEnv": { "PATH": "${containerEnv:PATH}:/home/vscode/.opencode/bin" },
+  "forwardPorts": [6006],
+  "portsAttributes": { "6006": { "label": "Phoenix", "onAutoForward": "notify" } },
+  // Python 3.15 and the dependencies, the warehouse, Phoenix and opencode.
+  "postCreateCommand": "bash .devcontainer/setup.sh",
+  // Open VS Code only once setup is done, so the tasks in .vscode/tasks.json find everything installed.
+  "waitFor": "postCreateCommand",
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
+        // The coding assistant in this course is opencode: hide Copilot Chat and the other
+        // built-in AI features, and keep the chat side bar closed.
+        "chat.disableAIFeatures": true,
+        "github.copilot.enable": { "*": false },
+        "workbench.secondarySideBar.defaultVisibility": "hidden",
+        "terminal.integrated.enablePersistentSessions": false
+      },
+      "extensions": [
+        "ms-python.python",
+        "charliermarsh.ruff",
+        "redhat.vscode-yaml",
+        "sst-dev.opencode"
+      ]
+    }
+  }
+}

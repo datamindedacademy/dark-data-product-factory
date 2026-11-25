@@ -28,13 +28,16 @@ numbers to show for it.
 
 ## Quick start
 
+In a GitHub Codespace the devcontainer installs everything, builds the warehouse and starts Phoenix; it asks for an OpenRouter key (`LLM_API_KEY`). On a laptop:
+
 ```bash
 uv sync --extra dev          # Python 3.15 (see .python-version), installs dbt-duckdb, dbt charts, checkup, the Agent SDK, Agno
 source .venv/bin/activate
 factory setup                # generates the warehouse and builds the dbt project (~10 s)
 pytest -q                    # checks the benchmark itself, no LLM calls (~4 min)
 
-export ANTHROPIC_API_KEY=...         # the baselines also work with a `claude` login; Agno agents need the key
+export LLM_API_KEY=...               # OpenRouter key, as in the other courses (or ANTHROPIC_API_KEY, or a `claude` login)
+make phoenix                         # in a second terminal: every agent run becomes a trace at http://localhost:6006
 factory bench list
 factory run intake --case intake-01-category        # one run, prints the grades
 factory bench run intake --repeat 3                 # the baseline score for your station

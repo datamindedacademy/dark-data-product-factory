@@ -32,6 +32,8 @@ from claude_agent_sdk import (
     UserMessage,
 )
 
+from factory.llm import via_openrouter
+
 PREVIEW = 600
 
 # USD per million tokens (input, output), matched on the model id. Agno does not report cost for
@@ -43,7 +45,7 @@ PRICES = {"opus-5-5": (4.0, 20.0), "sonnet-5-5": (2.0, 10.0), "haiku-5-5": (0.1,
 
 def estimate_cost(model: str, usage: dict[str, Any]) -> float | None:
     """Cost from token counts: cache writes at 1.25x and cache reads at 0.05x the input price."""
-    price = next((p for k, p in PRICES.items() if k in (model or "")), None)
+    price = next((p for k, p in PRICES.items() if k in (model or "").replace(".", "-")), None)
     if not price:
         return None
     n = lambda k: usage.get(k) or 0  # noqa: E731
@@ -116,7 +118,10 @@ class Tracer:
                                 "is_error": bool(b.is_error), "chars": len(text), "preview": text[:PREVIEW]})
         elif isinstance(msg, ResultMessage):
             self.result = {"subtype": msg.subtype, "is_error": msg.is_error, "num_turns": msg.num_turns,
-                           "duration_ms": msg.duration_ms, "total_cost_usd": msg.total_cost_usd,
+                           "duration_ms": msg.duration_ms,
+                           # through OpenRouter the SDK's own figure is not Anthropic's price list: count tokens
+                           "total_cost_usd": estimate_cost(self.meta.get("model"), msg.usage or {}) if via_openrouter()
+                           else msg.total_cost_usd,
                            "usage": msg.usage, "stop_reason": msg.stop_reason}
             self._emit({"type": "result", **self.result})
 

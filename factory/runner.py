@@ -35,9 +35,10 @@ import yaml
 import claude_agent_sdk
 from claude_agent_sdk import ClaudeAgentOptions, HookMatcher, create_sdk_mcp_server
 
-from factory import paths, phoenix, workspace
+from factory import llm, paths, phoenix, workspace
 from factory.tracing import Tracer
 
+llm.configure()
 DEFAULT_MODEL = os.environ.get("FACTORY_MODEL") or "claude-haiku-5-5"  # small on purpose: the baseline leaves room
 
 
@@ -64,6 +65,7 @@ class AgentConfig:
         raw.pop("description", None)
         if raw.get("model") in (None, "default"):
             raw["model"] = DEFAULT_MODEL
+        raw["model"] = llm.model_id(raw["model"])  # OpenRouter needs anthropic/claude-...-5.5
         raw.setdefault("name", agent_dir.name)
         return cls(dir=agent_dir, **raw)
 

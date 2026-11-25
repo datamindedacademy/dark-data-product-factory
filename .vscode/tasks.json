@@ -1,0 +1,34 @@
+{
+  "version": "2.0.0",
+  // These run when the folder opens, once you allow automatic tasks: VS Code asks the first time.
+  // opencode doesn't start from here: press Ctrl+Esc to open it next to the editor.
+  "tasks": [
+    {
+      "label": "opencode",
+      "type": "shell",
+      "command": "opencode",
+      "options": { "cwd": "${workspaceFolder}" },
+      "presentation": { "reveal": "always", "focus": true, "panel": "dedicated", "close": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "Terminal",
+      "type": "shell",
+      "command": "echo ${command:workbench.action.terminal.new}",
+      "presentation": { "reveal": "never", "close": true },
+      "runOptions": { "runOn": "folderOpen" },
+      "problemMatcher": []
+    },
+    {
+      // Runs Phoenix at http://localhost:6006 in its own terminal, without taking the focus.
+      "label": "Phoenix",
+      "type": "shell",
+      "command": "bash .devcontainer/start-phoenix.sh",
+      "options": { "cwd": "${workspaceFolder}" },
+      "isBackground": true,
+      "presentation": { "reveal": "never", "focus": false, "panel": "dedicated", "close": false },
+      "runOptions": { "runOn": "folderOpen" },
+      "problemMatcher": []
+    }
+  ]
+}

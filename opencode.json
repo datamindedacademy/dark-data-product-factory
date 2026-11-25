@@ -1,0 +1,12 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "openrouter/qwen/qwen4-max",
+  "providers": {
+    "openrouter": {
+      "env": ["LLM_API_KEY", "OPENROUTER_API_KEY"],
+      "models": {
+        "qwen/qwen4-max": { "modelID": "qwen/qwen4-max", "name": "Qwen4 Max" }
+      }
+    }
+  }
+}
