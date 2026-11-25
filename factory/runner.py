@@ -26,14 +26,16 @@ import json
 import os
 import re
 import string
+from contextlib import nullcontext
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
 import yaml
-from claude_agent_sdk import ClaudeAgentOptions, HookMatcher, create_sdk_mcp_server, query
+import claude_agent_sdk
+from claude_agent_sdk import ClaudeAgentOptions, HookMatcher, create_sdk_mcp_server
 
-from factory import paths, workspace
+from factory import paths, phoenix, workspace
 from factory.tracing import Tracer
 
 DEFAULT_MODEL = os.environ.get("FACTORY_MODEL") or "claude-haiku-5-5"  # small on purpose: the baseline leaves room
@@ -192,21 +194,33 @@ async def run_agent(agent_dir: str | Path, ws: Path, run_dir: Path, ctx: dict[st
                               "framework": "agno" if agno else "claude-agent-sdk",
                               "model": cfg.model, "effort": cfg.effort, **(meta or {})})
     error = None
+    attrs = nullcontext()
+    if phoenix.setup():  # one Phoenix session per benchmark or e2e run
+        from openinference.instrumentation import using_attributes
+        attrs = using_attributes(session_id=run_dir.parent.name,
+                                 metadata={"agent": cfg.name, **{k: str(v) for k, v in (meta or {}).items()}})
     try:
-        if agno:
-            os.environ["PATH"] = workspace.env()["PATH"]  # the agent's shell tools must find factory, dbt, dct
-            tracer.on_agno_run(await _load(cfg.dir / "agent.py").build_agent(ws, cfg).arun(prompt), cfg.model)
-        else:
-            async for msg in query(prompt=prompt, options=build_options(cfg, ws)):
-                tracer.on_message(msg)
+        with attrs:
+            await _run(cfg, ws, prompt, agno, tracer)
     except Exception as exc:  # noqa: BLE001 - recorded in the trace, graded as a failed run
         error = f"{type(exc).__name__}: {exc}"
+    phoenix.flush()
     summary = tracer.close(error)
     missing = [o for o in cfg.outputs if not (ws / _render(o, ctx)).exists()]
     if missing:
         summary["missing_outputs"] = missing
         (run_dir / "summary.json").write_text(json.dumps(summary, indent=2, default=str))
     return summary
+
+
+async def _run(cfg: AgentConfig, ws: Path, prompt: str, agno: bool, tracer: Tracer) -> None:
+    if agno:
+        os.environ["PATH"] = workspace.env()["PATH"]  # the agent's shell tools must find factory, dbt, dct
+        tracer.on_agno_run(await _load(cfg.dir / "agent.py").build_agent(ws, cfg).arun(prompt), cfg.model)
+    else:
+        # claude_agent_sdk.query is looked up per call: the Phoenix instrumentor replaces it on the module
+        async for msg in claude_agent_sdk.query(prompt=prompt, options=build_options(cfg, ws)):
+            tracer.on_message(msg)
 
 
 def run_agent_sync(*args: Any, **kwargs: Any) -> dict[str, Any]:

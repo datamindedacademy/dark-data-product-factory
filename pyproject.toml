@@ -17,6 +17,9 @@ dependencies = [
     "checkup-dbt>=0.5",
     "agno[mcp]>=3.0.5",
     "anthropic>=2.12.0",
+    "arize-phoenix-otel>=0.17.3",
+    "openinference-instrumentation-agno>=1.2.2",
+    "openinference-instrumentation-claude-agent-sdk>=0.1.32",
 ]
 
 [project.optional-dependencies]
