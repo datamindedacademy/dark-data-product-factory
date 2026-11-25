@@ -101,11 +101,14 @@ def test_e2e_line_with_scripted_agents(tmp_path, monkeypatch):
 
     product = "category_performance"
     golden = paths.PRODUCTS / product
-    calls = []
+    calls, events, workspaces = [], [], {}
 
     async def fake_run_agent(agent_dir, ws, run_dir, ctx=None, meta=None):
         stage = Path(agent_dir).name
         calls.append(stage)
+        workspaces[stage] = ws
+        events.append(f"start {stage}")
+        await asyncio.sleep(0)
         if stage == "intake":
             shutil.copy(golden / "spec.yaml", ws / "output" / "spec.yaml")
         elif stage == "implement":
@@ -119,6 +122,7 @@ def test_e2e_line_with_scripted_agents(tmp_path, monkeypatch):
                 {"product_id": product, "compliant": True, "violations": []}))
         elif stage == "bi":
             shutil.copy(golden / "board.yml", ws / "warehouse" / "charts" / f"{product}.yml")
+        events.append(f"end {stage}")
         return {"status": "ok", "total_cost_usd": 0.0, "num_turns": 1, "duration_ms": 1, "final_text": "done"}
 
     monkeypatch.setattr(e2e, "run_agent", fake_run_agent)
@@ -127,6 +131,9 @@ def test_e2e_line_with_scripted_agents(tmp_path, monkeypatch):
     assert calls == ["intake", "implement", "review", "governance", "bi"]
     assert summary["outcome"] == "delivered", summary
     assert summary["acceptance"] == 1.0
+    # review and governance overlap, each in its own workspace
+    assert events.index("start governance") < events.index("end review")
+    assert workspaces["governance"] != workspaces["review"]
 
     from factory import competition
 
