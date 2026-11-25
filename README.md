@@ -1,9 +1,9 @@
 # Dark data product factory
 
-Capstone project for the AI engineering bootcamp. In one day your team builds up a
+Capstone project for the AI engineering bootcamp. From Thursday afternoon to Friday your team builds up a
 **dark factory for data products**: a line of AI agents that turns a stakeholder's
 request into a tested dbt data product with a dashboard, with no human in the loop.
-At the end of the day every team's factory builds a request nobody has seen, in CI, and
+On Friday every team's factory builds a request nobody has seen, in CI, and
 an automated benchmark picks the winner ([docs/capstone-day.md](docs/capstone-day.md)).
 
 ```
@@ -21,10 +21,10 @@ synthetic but realistic, messy data (`warehouse/`). Dashboards are built with
 
 Every station has a working **baseline agent** built with the Claude Agent SDK
 (`agents/<station>/`) and a **benchmark** (`benchmark/cases/<station>/`) that scores it.
-The baselines are deliberately plain. Your job: build your own agent for a station with
-[Agno](https://docs.agno.com) (`agents/intake-agno/` is the starter), give it skills and
-an MCP server, write benchmark cases, and use them to improve the whole line - with
-numbers to show for it.
+The baselines are deliberately plain. Your job: take one agent at a time through the loop
+(benchmark, read the traces, change its context, repeat) and improve the whole line, with
+numbers to show for it. Agno (`agents/intake-agno/` is the starter), skills and MCP servers
+are there to help, not required. See [agents/README.md](agents/README.md).
 
 ## Quick start
 
@@ -55,10 +55,10 @@ command you can run locally. The final challenge runs in its own pipeline,
 Without an API key you can still explore everything: `factory bench run <station> --oracle`
 grades the golden answers (should be 1.0) and shows you exactly what the graders check.
 
-## The stations (split your team across them, rebuild at least one with Agno)
+## The stations
 
-Each person or pair owns one station; the rest of the line runs on its baseline. With four people,
-take intake, implement, governance and bi: together they decide 80 of the 100 final points.
+Start with one, then take the next. Intake, implement, governance and bi together decide 80 of the
+100 final points.
 
 | Track | Input → output | What makes it hard | Brief |
 |---|---|---|---|

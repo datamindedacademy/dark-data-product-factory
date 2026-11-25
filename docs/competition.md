@@ -1,6 +1,6 @@
 # The final challenge (organisers)
 
-At the end of the day the organisers open one GitHub issue with a data product request nobody
+On Friday the organisers open one GitHub issue with a data product request nobody
 has seen. Every team's factory builds it, unattended, in a CI pipeline the team cannot change.
 An automated benchmark scores the result. Highest score wins.
 
