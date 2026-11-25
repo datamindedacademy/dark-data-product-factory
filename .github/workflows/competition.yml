@@ -79,7 +79,7 @@ jobs:
         env:
           ANTHROPIC_API_KEY: ${{ secrets[format('ANTHROPIC_API_KEY_{0}', inputs.team)] || secrets.ANTHROPIC_API_KEY }}
           FACTORY_MODEL: ${{ vars.FACTORY_MODEL }}
-        run: factory e2e --issue "$RUNNER_TEMP/issue.md" --max-rework 1
+        run: factory e2e --issue "$RUNNER_TEMP/issue.md"   # rework limit: the team's agents/line.yaml
       - name: Export the submission
         if: always()
         run: factory ci export-submission submission

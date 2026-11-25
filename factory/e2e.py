@@ -6,7 +6,7 @@ All stations work in one workspace, the way they would in one repository:
     implement   input/spec.yaml           -> warehouse/models/marts/<id>/  on branch `feature`
     review      git diff main...feature   -> output/review.json      } in parallel; governance works
     governance  the product               -> output/governance.json  } in a copy of the workspace
-    (rework)    findings -> input/feedback.md -> implement again (max --max-rework times)
+    (rework)    findings -> input/feedback.md -> implement again (max_rework in agents/line.yaml)
     bi          spec + built models       -> warehouse/charts/<id>.yml
 
 Any station can be swapped for your team's agent with --agent <stage>=<dir>.
@@ -20,6 +20,7 @@ import shutil
 from pathlib import Path
 from typing import Any
 
+import yaml
 from rich.console import Console
 
 from factory import paths, workspace
@@ -30,8 +31,16 @@ from factory.runner import run_agent
 console = Console()
 
 
-async def run_line(issue: Path, agents: dict[str, Path] | None = None, max_rework: int = 1,
+def line_max_rework() -> int:
+    """The team's rework limit from agents/line.yaml (1 when the file or the key is missing)."""
+    f = paths.AGENTS / "line.yaml"
+    return int((yaml.safe_load(f.read_text()) or {}).get("max_rework", 1)) if f.exists() else 1
+
+
+async def run_line(issue: Path, agents: dict[str, Path] | None = None, max_rework: int | None = None,
                    stop_after: str | None = None) -> dict[str, Any]:
+    if max_rework is None:
+        max_rework = line_max_rework()
     agents = {s: paths.AGENTS / s for s in ["intake", "implement", "review", "governance", "bi"]} | (agents or {})
     run_dir = paths.RUNS / workspace.new_run_id("e2e")
     ws = workspace.create(run_dir)

@@ -123,7 +123,7 @@ run costs real money: agree on a budget per team in the morning.
   `benchmark/cases/`. Everything else is the organisers' code: the runner, the line, the warehouse,
   the standards, the graders, the dependencies and the pipeline. Changes you made to those in your
   fork are not there in the final.
-- The line is `factory e2e`: intake → implement → review and governance → at most one rework round →
+- The line is `factory e2e`: intake → implement → review and governance → rework rounds (as many as `agents/line.yaml` allows) →
   bi. If intake does not return a `ready` spec, the line stops and there is no product.
 - One run, 45 minutes, on an API key with a spend limit. No reruns for bad luck.
 - The score is computed by the pipeline and posted on your pull request.

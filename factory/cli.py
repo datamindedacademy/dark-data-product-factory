@@ -141,7 +141,7 @@ def run(stage: str, agent_dir: Path | None, case_id: str | None, issue: Path | N
 @main.command()
 @click.option("--issue", type=click.Path(exists=True, path_type=Path), required=True)
 @click.option("--agent", "overrides", multiple=True, help="Swap a station: --agent bi=agents/bi-v2")
-@click.option("--max-rework", default=1, show_default=True)
+@click.option("--max-rework", type=int, default=None, help="Default: max_rework in agents/line.yaml")
 @click.option("--stop-after", type=click.Choice(["intake", "implement", "review", "governance"]), default=None)
 def e2e(issue: Path, overrides: tuple[str, ...], max_rework: int, stop_after: str | None) -> None:
     """Run the whole factory line on one issue."""

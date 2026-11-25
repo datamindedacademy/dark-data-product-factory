@@ -1,0 +1,5 @@
+# Settings for the whole line. Yours to change: the final reads this file from your fork.
+
+# Rework rounds after review and governance send the product back. More rounds can fix more,
+# but each one costs money and minutes, and the final stops the line at 45 minutes.
+max_rework: 1
