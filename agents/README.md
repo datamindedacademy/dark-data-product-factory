@@ -1,15 +1,26 @@
 # Agents
 
-One directory per station. `agents/<station>/` is the line: what `factory e2e`, the CI
-pipelines and the final challenge run. **Work in a copy** so you can compare variants on the
-benchmark, and promote the winner by copying it over `agents/<station>/`:
+One folder per station; each has a short README. `agents/<station>/` is the line the final runs.
+`agents/line.yaml` sets how many rework rounds the line allows.
+
+## How to work
+
+Start with **one agent**, the one where the most points are. Work in a copy so you can compare:
 
 ```bash
-cp -r agents/intake-agno agents/intake-ourteam
-# edit agents/intake-ourteam/...
-factory bench run intake --agent-dir agents/intake-ourteam --label ourteam-v1 --repeat 3
-factory bench report --stage intake
-rm -rf agents/intake && cp -r agents/intake-ourteam agents/intake     # promote (the baseline stays in git)
+cp -r agents/intake agents/intake-ourteam
+```
+
+1. **Benchmark.** Add a case of your own in `benchmark/cases/<station>/`, then run:
+   `factory bench run intake --agent-dir agents/intake-ourteam --label v1 --repeat 3`
+2. **Traces.** Read `runs/bench-<time>-intake-v1/<case>-r<n>/trace.jsonl` of the cases that lost points: what went wrong?
+3. **Context.** Change one thing: prompt, skill, tool or MCP server.
+4. **Repeat.** Run the benchmark again (`--label v2`) and compare with `factory bench report`. Keep it or revert it.
+
+When the agent stops improving, promote it and take the next agent:
+
+```bash
+rm -rf agents/intake && cp -r agents/intake-ourteam agents/intake
 ```
 
 ## Agno agents
@@ -48,6 +59,7 @@ file, not yours.
 
 ```
 agents/<station>/
+  README.md           what the agent is responsible for, its input and output, tools and hints
   agent.yaml          model, effort, budgets, built-in tools, MCP servers, skills, expected outputs
   system_prompt.md    role and working method ($workspace is substituted)
   prompt.md           the task message ($product_id, $workspace, $repo_root are substituted)

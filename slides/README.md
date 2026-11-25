@@ -5,9 +5,11 @@ A short Slidev deck for the kick-off of the capstone day: the dark factory idea,
 | Slide | Content | Clicks |
 | --- | --- | --- |
 | 1 | Cover | 0 |
-| 2 | The line of agents from issue to data product, the rework loop, then contracts, baselines and the benchmark | 3 |
-| 3 | Thursday afternoon to Friday 14:00: an Agno agent, skills, MCP, a benchmark, improving the factory, then the final | 5 |
-| 4 | The final challenge, then how the product is scored | 4 |
+| 2 | Who am I, in the layout of Jonny’s intro slide: career lines, photo, timeline | 0 |
+| 3 | What a dark factory is: a lit factory floor goes dark, the robots keep working | 2 |
+| 4 | The line of agents from issue to data product, then the rework loop | 2 |
+| 5 | Thursday afternoon: one agent through benchmark, traces, context, repeat. Friday: as many other agents as the team wants, then the final | 4 |
+| 6 | The final as a race: a sealed request, every factory in the same pipeline, hidden grading, the podium, then the 100 points | 4 |
 
 Speaker notes are in the HTML comments under each slide; every `[click]` in the notes is one click on the slide. The content follows [docs/capstone-day.md](../docs/capstone-day.md); update the slides when the day plan changes.
 

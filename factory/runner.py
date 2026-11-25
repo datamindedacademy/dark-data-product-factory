@@ -70,10 +70,10 @@ class AgentConfig:
         return cls(dir=agent_dir, **raw)
 
     def fingerprint(self) -> str:
-        """Hash of every file in the agent dir - identifies the variant in results."""
+        """Hash of every file in the agent dir except its README - identifies the variant in results."""
         h = hashlib.sha256()
         for f in sorted(self.dir.rglob("*")):
-            if f.is_file() and "__pycache__" not in f.parts:
+            if f.is_file() and "__pycache__" not in f.parts and f.name != "README.md":
                 h.update(str(f.relative_to(self.dir)).encode())
                 h.update(f.read_bytes())
         return h.hexdigest()[:10]
