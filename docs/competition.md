@@ -61,7 +61,7 @@ Implemented in [`factory/competition.py`](../factory/competition.py), tested in
 | Interface | 5 | Fraction of the required models and columns that exist | yes |
 | Governance | 10 | `checkup` on the product, all rules it can check (GOV-001..010, the judgement ones as heuristics): `max(0, 1 - violations / 5)`; 0 when `dbt build` fails (a model or one of its tests) | yes |
 | Dashboard | 10 | One third each: `dct validate`, `dct render`, share of questions answered correctly (`Q1`... in query notes or chart titles of placed charts, *and* all of that question's hidden checks pass) | yes |
-| Efficiency | 15 | Correctness × mean of a cost score and a time score. Full marks up to $2 and 10 min, zero from $12 and 45 min, linear in between | yes: time from GitHub, cost from the team's OpenRouter key |
+| Efficiency | 15 | Correctness × mean of a cost score and a time score. Full marks up to $0.03 and 10 min, zero from $0.20 and 45 min, linear in between | yes: time from GitHub, cost from the team's OpenRouter key |
 | Own benchmark | 10 | New cases under `benchmark/cases/` that are valid (doing nothing scores 0, oracle scores 1); 3 valid cases = full marks | yes |
 
 Efficiency is multiplied by correctness so that a fast factory that builds nothing earns nothing.
@@ -79,10 +79,9 @@ A capable model finds every trap that is visible in the data (cancelled orders, 
 duplicates) on its own. What it cannot find is company know-how: rules that exist only in people's
 heads. [interviews.md](interviews.md) is the hand-out with those rules, given to teams at the
 kick-off; the baseline agents never see it. Base most of the oracle's checks on them. Measured on
-2026-11-22 with the hidden oracle (13 checks, 5 hidden rules): the Haiku baseline
-passes the 4 structural checks and fails the 9 that need the rules, about 40 / 100.
-TODO: re-measure. That run used the Claude Agent SDK baselines; the baselines are Agno agents now,
-so the score, and the cost and time thresholds of the efficiency score, need a new run.
+2026-11-25 with the hidden oracle and the Gemma baseline line, three runs: 5 to 14 / 100, $0.05 to
+$0.06 and about 3 minutes a run. The cost scale is set to half and three times that cost; the time
+scale still needs a CI run, because the run job includes setup.
 
 ## Runbook
 
@@ -159,8 +158,8 @@ and read the diff of their `agents/` directory.
   full marks. Judge usefulness in the demos if it matters.
 - **The oracle leaks slowly.** Score tables name the failed check ids, and anyone with write access
   to the organisers' repo can dispatch the workflow. Use a new oracle for a second round.
-- **Budgets in `agent.yaml` are the team's.** `max_budget_usd` is theirs to edit and Agno does not
-  enforce it. The hard limits are the 45-minute step timeout and the key's spend limit.
+- **There is no budget per agent.** The hard limits are the 45-minute step timeout and the spend limit
+  on the team's key.
 - **Forks must be readable** by the workflow. For private team repos, add a read token to the two
   `git fetch` steps.
 

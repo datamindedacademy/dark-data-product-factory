@@ -20,7 +20,7 @@ ORACLE = GOLDEN / "spec.yaml"
 pytestmark = pytest.mark.skipif(not paths.WAREHOUSE_DB.exists(), reason="run `factory setup` first")
 
 
-def submission(tmp_path: Path, overlay: Path | None = None, cost: float | None = 1.0) -> Path:
+def submission(tmp_path: Path, overlay: Path | None = None, cost: float | None = 0.02) -> Path:
     sub = tmp_path / "submission"
     shutil.copytree(GOLDEN / "models", sub / "models")
     shutil.copy(GOLDEN / "spec.yaml", sub / "spec.yaml")

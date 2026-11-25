@@ -31,8 +31,8 @@ from factory.contracts import DataProductSpec
 # value, zero at or above the second. Calibrate the scale on a baseline run before the day.
 # Correctness dominates: a well-governed, nicely charted product with wrong numbers is still wrong.
 POINTS = {"correctness": 50, "interface": 5, "governance": 10, "dashboard": 10, "efficiency": 15, "benchmark": 10}
-COST_USD = (2.0, 12.0)  # calibrated on the Haiku baseline line ($3.6 for 8 agent runs, 2026-11-22)
-DURATION_S = (600.0, 2700.0)
+COST_USD = (0.03, 0.20)  # half and three times the Gemma baseline line ($0.05-0.06 a run, 2026-11-25)
+DURATION_S = (600.0, 2700.0)  # TODO: recalibrate on a CI run of the baseline (the run job includes setup)
 BENCHMARK_CASES = 3  # new, valid benchmark cases needed for full marks
 _PRODUCT_FILES = {".sql", ".yml", ".yaml", ".md"}  # no .py: dbt Python models would be team code in the build job
 
