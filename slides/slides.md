@@ -1,200 +1,194 @@
 ---
-theme: "dataminded"
-title: "AI Engineering Capstone"
-info: "Why the capstone exists, what teams build during the day and how the final challenge works"
-fonts: {"serif":"El Messiri","sans":"DM Sans"}
-transition: "fade-out"
-layout: "cover"
-subtitle: "AI Engineering Capstone · Dataminded Academy"
+theme: ./theme
+title: Dark data product factory
+layout: cover
+tag: 'Kick-off'
+date: AI Academy
 ---
 
-<div v-motion :initial="{ y: 30, opacity: 0 }" :enter="{ y: 0, opacity: 1, transition: { duration: 900 } }">
-  <div class="eyebrow"><span class="i-mdi-lightbulb-off-outline" /> Lights out, nobody on the floor</div>
-</div>
+# Dark data product factory
 
-<h1 v-motion :initial="{ y: 40, opacity: 0 }" :enter="{ y: 0, opacity: 1, transition: { delay: 250, duration: 900 } }">A <span class="dm-accent">dark factory</span> for data products</h1>
+Capstone · AI Engineering Bootcamp
 
-<style>
-.eyebrow { display: inline-flex; align-items: center; gap: 10px; font-size: 15px; letter-spacing: 0.14em; text-transform: uppercase; color: #b3a7f2; margin-bottom: 22px; }
-.eyebrow span { width: 20px; height: 20px; }
-</style>
+<p style="margin-top: 2.2rem; max-width: 30rem; font-size: 1.35rem; line-height: 1.45; color: #fff">A line of agents that builds data products, with nobody in the loop</p>
 
 <!--
-Open with the image: a factory that runs with the lights off because nobody is on the floor.
-Today every team builds one where the product is a data product.
+A dark factory runs with the lights off, because nobody is on the floor. Today every team builds one, and the product is a data product.
 -->
 
 ---
-layout: "dark"
-label: "The idea"
-bg: "stream-violet"
+layout: default
+tag: 'The idea'
+clicks: 3
 ---
 
-# A line of agents that builds data products
+# A line of agents builds the product
 
-<p class="lead">A stakeholder at Fernhill Outfitters files a GitHub issue. Agents turn it into tested dbt models and a dashboard. No human in the loop.</p>
-
-<FactoryLine class="line" />
-
-<div class="pillars">
-  <div v-click class="pillar">
-    <span class="i-mdi-file-document-check-outline" />
-    <div><b>Contracts</b><p>Every hand-off is a file with a schema, so the stations fit together.</p></div>
-  </div>
-  <div v-click class="pillar">
-    <span class="i-mdi-robot-outline" />
-    <div><b>Plain baselines</b><p>Every station works, on purpose with short prompts and a small model.</p></div>
-  </div>
-  <div v-click class="pillar">
-    <span class="i-mdi-target-arrow" />
-    <div><b>A benchmark</b><p>Every change to an agent becomes a score, a cost and a number of turns.</p></div>
-  </div>
-</div>
-
-<style>
-.lead { color: #e9edff; font-size: 18px; max-width: 760px; margin: 14px 0 18px; }
-.line { margin: 6px 0 34px; }
-.pillars { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
-.pillar { display: flex; gap: 14px; align-items: flex-start; padding: 14px 16px; border-radius: 14px; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(179, 167, 242, 0.25); backdrop-filter: blur(4px); }
-.pillar > span { flex: none; width: 30px; height: 30px; color: #8f7bff; }
-.pillar b { color: #fff; font-size: 16px; }
-.pillar p { margin: 4px 0 0; font-size: 13.5px; line-height: 1.4; color: #cacdf9; }
-.slidev-vclick-target { transition: opacity 0.5s ease, transform 0.5s ease; }
-.slidev-vclick-hidden { transform: translateY(16px); }
-</style>
+<svg class="dg" viewBox="0 0 860 340" style="margin-top: 0.2rem">
+  <defs>
+    <marker id="arr-02" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#080635"/></marker>
+    <marker id="arr-02s" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#543edc"/></marker>
+  </defs>
+  <!-- the request -->
+    <g class="dg-node">
+      <rect x="0" y="122" width="112" height="56" rx="3"/>
+      <text x="12" y="143" class="dg-cap">REQUEST</text>
+      <text x="12" y="164" style="font-size: 15px; font-weight: 700">GitHub issue</text>
+    </g>
+  <!-- the stations: review and governance run side by side -->
+  <g v-click="1">
+    <g class="dg-line" style="fill: none">
+      <path d="M112 150 H140" marker-end="url(#arr-02)"/>
+      <path d="M256 150 H284" marker-end="url(#arr-02)"/>
+      <path d="M400 150 C 416 150, 414 114, 428 114" marker-end="url(#arr-02)"/>
+      <path d="M400 150 C 416 150, 414 186, 428 186" marker-end="url(#arr-02)"/>
+      <path d="M544 114 C 560 114, 558 150, 572 150" marker-end="url(#arr-02)"/>
+      <path d="M544 186 C 560 186, 558 150, 572 150"/>
+      <path d="M688 150 H716" marker-end="url(#arr-02)"/>
+    </g>
+    <g class="dg-solid">
+      <rect x="144" y="122" width="112" height="56" rx="3"/>
+      <text x="156" y="143" class="dg-cap">INTAKE</text>
+      <text x="156" y="164" style="font-size: 13px">spec.yaml</text>
+    </g>
+    <foreignObject x="230" y="150" width="22" height="22"><span class="i-ph-clipboard-text-bold" style="display: block; font-size: 20px; color: #b3a7f2" /></foreignObject>
+    <g class="dg-solid">
+      <rect x="288" y="122" width="112" height="56" rx="3"/>
+      <text x="300" y="143" class="dg-cap">IMPLEMENT</text>
+      <text x="300" y="164" style="font-size: 13px">dbt models</text>
+    </g>
+    <foreignObject x="374" y="150" width="22" height="22"><span class="i-ph-database-bold" style="display: block; font-size: 20px; color: #b3a7f2" /></foreignObject>
+    <g class="dg-solid">
+      <rect x="432" y="86" width="112" height="56" rx="3"/>
+      <text x="444" y="107" class="dg-cap">REVIEW</text>
+      <text x="444" y="128" style="font-size: 13px">findings</text>
+    </g>
+    <foreignObject x="518" y="114" width="22" height="22"><span class="i-ph-magnifying-glass-bold" style="display: block; font-size: 20px; color: #b3a7f2" /></foreignObject>
+    <g class="dg-solid">
+      <rect x="432" y="158" width="112" height="56" rx="3"/>
+      <text x="444" y="179" class="dg-cap">GOVERNANCE</text>
+      <text x="444" y="200" style="font-size: 13px">checkup</text>
+    </g>
+    <foreignObject x="518" y="186" width="22" height="22"><span class="i-ph-shield-check-bold" style="display: block; font-size: 20px; color: #b3a7f2" /></foreignObject>
+    <g class="dg-solid">
+      <rect x="576" y="122" width="112" height="56" rx="3"/>
+      <text x="588" y="143" class="dg-cap">BI</text>
+      <text x="588" y="164" style="font-size: 13px">dashboard</text>
+    </g>
+    <foreignObject x="662" y="150" width="22" height="22"><span class="i-ph-chart-bar-bold" style="display: block; font-size: 20px; color: #b3a7f2" /></foreignObject>
+    <g class="dg-node">
+      <rect x="720" y="122" width="140" height="56" rx="3"/>
+      <text x="732" y="143" class="dg-cap">DELIVERED</text>
+      <text x="732" y="164" style="font-size: 15px; font-weight: 700">data product</text>
+    </g>
+  </g>
+  <!-- the rework loop -->
+  <g v-click="2">
+    <path d="M488 86 C 488 40, 344 40, 344 116" class="dg-line-soft" marker-end="url(#arr-02s)"/>
+    <path d="M488 214 C 488 260, 344 260, 344 184" class="dg-line-soft" marker-end="url(#arr-02s)"/>
+    <text x="416" y="34" text-anchor="middle" class="dg-cap">REWORK, ONCE</text>
+  </g>
+  <!-- what makes the time enough -->
+  <g v-click="3">
+    <g v-for="(c, i) in [['CONTRACTS', 'every hand-off is a file with a schema'], ['BASELINES', 'every station already works, plainly'], ['BENCHMARK', 'every change becomes a score']]" :key="c[0]">
+      <rect :x="i * 292" y="276" width="276" height="62" rx="3" style="fill: #f2f2f4"/>
+      <text :x="16 + i * 292" y="299" class="dg-cap">{{ c[0] }}</text>
+      <text :x="16 + i * 292" y="321" style="font-size: 14px">{{ c[1] }}</text>
+    </g>
+  </g>
+</svg>
 
 <!--
-Let the animation run for a moment: the request travels through the line and each station lights up.
-Intake writes an executable spec, implement writes dbt models, review and governance check them
-and can send work back once, BI builds the dashboard.
-Then click in the three pillars: they are why one day is enough. The plumbing is done.
+A stakeholder at Fernhill Outfitters, our invented outdoor-gear retailer, files a GitHub issue.
+
+[click] Five agents turn it into a data product. Intake writes an executable spec and implement writes the dbt models. Review and governance check them at the same time, then BI builds the dashboard.
+
+[click] Review and governance can send the work back to implement once.
+
+[click] Three things make a day and a half enough. Every hand-off is a file with a schema, so the stations fit together. Every station has a working baseline agent, plain on purpose. And a benchmark turns every change to an agent into a score, a cost and a number of turns.
 -->
 
 ---
-layout: "default"
-label: "Your day"
+layout: default
+tag: 'Your day'
+clicks: 5
 ---
 
 # Your team builds up its own factory
 
-<p class="intro">Fork the repository, own the whole line. One station per person or pair; the rest runs on its baseline.</p>
-
-<div class="blocks">
-  <div v-click="1" class="block">
-    <div class="tile"><span class="i-mdi-robot-happy-outline" /></div>
-    <div class="time">09:30</div>
-    <b>Agno agent</b>
-    <p>Rebuild a station as your own agent and read its first trace.</p>
-  </div>
-  <div v-click="2" class="block">
-    <div class="tile"><span class="i-mdi-book-open-page-variant-outline" /></div>
-    <div class="time">10:45</div>
-    <b>Skills</b>
-    <p>Teach it what the traces showed: Fernhill's business rules.</p>
-  </div>
-  <div v-click="3" class="block">
-    <div class="tile"><span class="i-mdi-power-plug-outline" /></div>
-    <div class="time">11:30</div>
-    <b>MCP</b>
-    <p>Connect the dbt charts MCP server, or write your own tool.</p>
-  </div>
-  <div v-click="4" class="block">
-    <div class="tile"><span class="i-mdi-flask-outline" /></div>
-    <div class="time">13:15</div>
-    <b>Benchmark</b>
-    <p>Add three cases of your own, from the failures you saw.</p>
-  </div>
-  <div v-click="5" class="block">
-    <div class="tile"><span class="i-mdi-chart-line-variant" /></div>
-    <div class="time">14:15</div>
-    <b>Improve</b>
-    <p>Follow the points. Measure every change, revert what fails.</p>
-  </div>
-</div>
-
-<div class="day">
-  <div class="day-bar"><div class="day-fill" :style="{ width: `${Math.min($clicks, 5) * 17.6}%` }" /></div>
-  <div class="day-end" :class="{ on: $clicks >= 5 }"><span class="i-mdi-trophy-outline" /> 16:00 final</div>
-</div>
-
-<style>
-.intro { font-size: 17px; margin: -4px 0 34px; }
-.blocks { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; }
-.block { position: relative; background: var(--dm-surface); border-radius: 16px; padding: 18px 16px 16px; }
-.block b { display: block; font-size: 17px; color: var(--dm-premium); margin-top: 4px; }
-.block p { font-size: 13.5px; line-height: 1.4; margin: 6px 0 0; color: #3a3a44; }
-.tile { width: 54px; height: 54px; border-radius: 14px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #543edc, #ba3ddb); box-shadow: 0 10px 22px rgba(84, 62, 220, 0.35); margin-bottom: 12px; }
-.tile span { width: 30px; height: 30px; color: #fff; }
-.time { position: absolute; top: 18px; right: 16px; font-size: 13px; font-weight: 600; color: var(--dm-connecting); }
-.day { display: flex; align-items: center; gap: 16px; margin-top: 44px; }
-.day-bar { flex: 1; height: 8px; border-radius: 4px; background: var(--dm-surface); overflow: hidden; }
-.day-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, #543edc, #ba3ddb); transition: width 0.7s ease; }
-.day-end { display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 15px; color: #b6b6c2; transition: color 0.4s; }
-.day-end span { width: 22px; height: 22px; }
-.day-end.on { color: var(--dm-connecting); }
-.slidev-vclick-target { transition: opacity 0.5s ease, transform 0.5s ease; }
-.slidev-vclick-hidden { transform: translateY(24px); }
-</style>
+<svg class="dg" viewBox="0 0 860 330" style="margin-top: 0.6rem">
+  <!-- two half days, the night in between -->
+  <path d="M0 90 H328" class="dg-line"/>
+  <path d="M344 90 H860" class="dg-line"/>
+  <text x="0" y="64" class="dg-cap">THURSDAY AFTERNOON</text>
+  <text x="344" y="64" class="dg-cap">FRIDAY</text>
+  <circle cx="0" cy="90" r="5" style="fill: #080635"/>
+  <circle cx="344" cy="90" r="5" style="fill: #080635"/>
+  <circle cx="852" cy="90" r="7" :style="{ fill: $clicks >= 5 ? '#543edc' : '#b4b2c6', transition: 'fill 0.3s' }"/>
+  <text x="860" y="64" text-anchor="end" :style="{ fontSize: '15px', fontWeight: 700, fill: $clicks >= 5 ? '#543edc' : '#8a88a3', transition: 'fill 0.3s' }">final, done by 14:00</text>
+  <!-- the five blocks -->
+  <g v-for="(b, i) in [['An Agno agent', 'Rebuild a station', 'as your own agent.'], ['Skills', 'Teach it Fernhill’s', 'business rules.'], ['MCP', 'Connect a server,', 'or write your own.'], ['A benchmark', 'Three cases from', 'the failures you saw.'], ['Improve', 'Measure every change,', 'revert what fails.']]" :key="b[0]" v-click="i + 1">
+    <circle :cx="78 + i * 172" cy="90" r="5" style="fill: #543edc"/>
+    <path :d="`M${78 + i * 172} 96 V128`" class="dg-line-soft"/>
+    <g class="dg-node">
+      <rect :x="0 + i * 172" y="132" width="156" height="122" rx="3"/>
+    </g>
+    <text :x="12 + i * 172" y="156" class="dg-cap">BLOCK {{ i + 1 }}</text>
+    <text :x="12 + i * 172" y="182" style="font-size: 16px; font-weight: 700">{{ b[0] }}</text>
+    <text :x="12 + i * 172" y="212" class="dg-note" style="font-size: 13px">{{ b[1] }}</text>
+    <text :x="12 + i * 172" y="230" class="dg-note" style="font-size: 13px">{{ b[2] }}</text>
+  </g>
+  <text x="0" y="300" class="dg-note" style="font-size: 14px">One station per person or pair. The rest of the line runs on its baseline.</text>
+</svg>
 
 <!--
-Click through the five blocks: one per topic of the week, each with a checkpoint a facilitator ticks off.
-The bar fills up towards the final at 16:00.
-Hand out interviews.md at the kick-off: it holds the company know-how no agent can find in the data.
+The capstone runs from Thursday afternoon to Friday, 14:00. Fork the repository: your team owns the whole line. Split the stations, one per person or pair; the rest runs on its baseline. Start with intake, implement, governance and BI. One block per topic of the week, each with a checkpoint a facilitator ticks off.
+
+[click] Rebuild a station as your own Agno agent, and read the trace of its first run.
+
+[click] Give it a skill: what the traces showed you, Fernhill's business rules.
+
+[click] Connect the dbt charts MCP server, or write your own tool.
+
+[click] Add three benchmark cases for your station, taken from the failures you saw on Thursday.
+
+[click] Then improve the factory: go where the practice score says the points are, measure every change and revert what fails. Then you freeze your fork and the final runs; everything is done by 14:00 on Friday. Hand out interviews.md now: it holds the company know-how no agent can find in the data.
 -->
 
 ---
-layout: "dark"
-label: "The final"
-bg: "section"
+layout: default
+tag: 'The final'
+clicks: 4
 ---
 
 # The final: a request nobody has seen
 
-<div class="final">
-  <div class="final-left">
-    <ScoreClock />
-    <div class="facts">
-      <div v-click="1"><span class="i-mdi-github" /> A new issue, opened at 16:00</div>
-      <div v-click="2"><span class="i-mdi-factory" /> Every team's factory, the same CI pipeline</div>
-      <div v-click="3"><span class="i-mdi-account-off-outline" /> One run, unattended, no reruns</div>
-    </div>
-  </div>
-  <div v-click="4" class="final-right">
-    <div class="score-title">How the product is scored</div>
-    <div class="score">
-      <span>Correctness</span><div><i style="--w: 100%" class="hot" /></div><b>50</b>
-      <span>Efficiency</span><div><i style="--w: 30%" /></div><b>15</b>
-      <span>Governance</span><div><i style="--w: 20%" /></div><b>10</b>
-      <span>Dashboard</span><div><i style="--w: 20%" /></div><b>10</b>
-      <span>Own benchmark</span><div><i style="--w: 20%" /></div><b>10</b>
-      <span>Interface</span><div><i style="--w: 10%" /></div><b>5</b>
-    </div>
-    <p class="score-note">The request uses data the public products hardly touch. Only a factory that learned how Fernhill's data works gets the numbers right.</p>
-  </div>
+<div style="display: grid; grid-template-columns: 0.8fr 1.2fr; gap: 2.4rem; margin-top: 1.2rem">
+<div style="display: flex; flex-direction: column; gap: 1.1rem; font-size: 1.05rem">
+  <div v-click="1" style="display: flex; gap: 0.7rem; align-items: center"><span class="i-ph-github-logo-bold" style="color: #543edc; flex: none" /> A new issue, opened on Friday</div>
+  <div v-click="2" style="display: flex; gap: 0.7rem; align-items: center"><span class="i-ph-factory-bold" style="color: #543edc; flex: none" /> Every factory, the same CI pipeline</div>
+  <div v-click="3" style="display: flex; gap: 0.7rem; align-items: center"><span class="i-ph-timer-bold" style="color: #543edc; flex: none" /> One run, 45 minutes, no reruns</div>
+</div>
+<svg v-click="4" class="dg" viewBox="0 0 500 250">
+  <text x="0" y="12" class="dg-cap">POINTS, OUT OF 100</text>
+  <g v-for="(r, i) in [['Correctness', 50], ['Efficiency', 15], ['Governance', 10], ['Dashboard', 10], ['Own benchmark', 10], ['Interface', 5]]" :key="r[0]">
+    <text x="0" :y="50 + i * 34" style="font-size: 15px">{{ r[0] }}</text>
+    <rect x="130" :y="36 + i * 34" :width="r[1] * 6.6" height="18" rx="2" :class="i === 0 ? 'dg-block' : 'dg-block-soft'"/>
+    <text :x="140 + r[1] * 6.6" :y="50 + i * 34" style="font-size: 15px; font-weight: 700">{{ r[1] }}</text>
+  </g>
+</svg>
 </div>
 
-<style>
-.final { display: grid; grid-template-columns: 0.9fr 1.1fr; gap: 48px; margin-top: 8px; }
-.final-left { display: flex; flex-direction: column; gap: 22px; }
-.facts { display: flex; flex-direction: column; gap: 12px; }
-.facts div { display: flex; align-items: center; gap: 12px; font-size: 16px; color: #e9edff; }
-.facts span { flex: none; width: 24px; height: 24px; color: #8f7bff; }
-.final-right { background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(179, 167, 242, 0.25); border-radius: 18px; padding: 22px 24px; backdrop-filter: blur(4px); }
-.score-title { font-size: 13px; letter-spacing: 0.14em; text-transform: uppercase; color: #b3a7f2; margin-bottom: 16px; }
-.score { display: grid; grid-template-columns: 118px 1fr 28px; gap: 12px 12px; align-items: center; }
-.score span { font-size: 15px; color: #fff; }
-.score div { height: 12px; background: rgba(179, 167, 242, 0.15); border-radius: 6px; overflow: hidden; }
-.score i { display: block; height: 100%; width: var(--w); border-radius: 6px; background: linear-gradient(90deg, #543edc, #8f7bff); transition: width 1.1s cubic-bezier(0.2, 0.8, 0.2, 1); }
-.score i.hot { background: linear-gradient(90deg, #543edc, #ba3ddb, #fc6b51); box-shadow: 0 0 16px rgba(186, 61, 219, 0.6); }
-.final-right.slidev-vclick-hidden .score i { width: 0; }
-.score b { font-size: 15px; text-align: right; color: #fff; }
-.score-note { margin: 18px 0 0; font-size: 13.5px; line-height: 1.45; color: #cacdf9; }
-</style>
+<p v-click="4" style="margin-top: 1.4rem; font-size: 1.05rem">Only a factory that learned how Fernhill’s data works gets the numbers right.</p>
 
 <!--
-This is the purpose of the day: not the best prompt for a known case, but a factory that generalises.
-Click in the facts, then the scoring: the bars grow in. Correctness weighs half on purpose,
-and efficiency only counts as far as the product is correct.
-After the final each team tells the change that mattered most, one thing that did not work,
-and how well their own benchmark predicted their final score.
+This is the point of the capstone: not the best prompt for a known case, but a factory that generalises.
+
+[click] On Friday the organisers open an issue nobody has seen.
+
+[click] Every team's factory builds it in the same CI pipeline, one the team cannot change.
+
+[click] One run, 45 minutes, unattended. No reruns for bad luck.
+
+[click] Correctness weighs half, on purpose: a well-governed product with wrong numbers is wrong. Efficiency only counts as far as the product is correct. The request uses a part of the warehouse the public products hardly touch. After the final each team tells the change that mattered most, one thing that did not work, and how well their own benchmark predicted their final score.
 -->

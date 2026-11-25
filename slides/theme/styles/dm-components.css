@@ -1,0 +1,85 @@
+/* Tokens and helpers for the Dm* components and the agenda/cards/values/intro/quote/thanks layouts, merged from datamindedbe/playground-agentic-slides. Global typography stays in main.css. */
+:root {
+  --dm-premium: #080635;
+  --dm-connecting: #543edc;
+  --dm-authentic: #e9edff;
+  --dm-green: #8fdb3d;
+  --dm-yellow: #ffd55b;
+  --dm-coral: #fc6b51;
+  --dm-magenta: #ba3ddb;
+  --dm-lilac: #cacdf9;
+  --dm-space: #36288f;
+  --dm-surface: #f2f2f4;
+}
+
+.dm-eyebrow {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--dm-connecting);
+}
+
+.dm-section-label {
+  position: absolute;
+  top: 28px;
+  right: 40px;
+  font-size: 14px;
+  opacity: 0.85;
+}
+
+.slidev-layout.dm-dark,
+.slidev-layout.dm-dark h1,
+.slidev-layout.dm-dark h2,
+.slidev-layout.dm-dark h3 { color: #fff; }
+.slidev-layout.dm-dark .dm-accent, .dm-section .dm-accent { color: #b3a7f2; }
+
+/* Content on dark layouts must paint above the DmBg background image */
+.dm-quote-body,
+.dm-thanks-body { position: relative; z-index: 1; }
+
+/* Diagrams: inline SVG in the clean style of the source deck (S21-S26). See patterns.md for usage. */
+.dg { width: 100%; height: auto; overflow: visible; font-family: 'DM Sans', Arial, sans-serif; }
+.dg text { font-size: 13px; fill: var(--dm-navy); }
+.dg .dg-cap { font-family: ui-monospace, Menlo, monospace; font-size: 10px; letter-spacing: 0.14em; fill: var(--dm-purple); }
+.dg .dg-note { font-size: 11px; fill: var(--dm-muted); }
+.dg .dg-node rect { fill: #fff; stroke: var(--dm-purple); stroke-width: 1.2; }
+.dg .dg-solid rect { fill: var(--dm-navy); stroke: none; }
+.dg .dg-solid text { fill: #fff; }
+.dg .dg-solid .dg-cap { fill: #b3a7f2; }
+.dg .dg-ghost rect { fill: none; stroke: var(--dm-muted); stroke-dasharray: 4 3; }
+.dg .dg-group > rect { fill: var(--dm-surface); stroke: none; }
+.dg .dg-danger rect { stroke: var(--dm-coral); stroke-width: 2; }
+.dg .dg-line { stroke: var(--dm-navy); stroke-width: 1.2; fill: none; }
+.dg .dg-line-soft { stroke: var(--dm-purple); stroke-width: 1; fill: none; stroke-dasharray: 3 3; }
+.dg .dg-block { fill: var(--dm-purple); }
+.dg .dg-block-soft { fill: var(--dm-lilac); }
+.dg .dg-key circle { fill: var(--dm-purple); }
+.dg .dg-key path { stroke: #fff; stroke-width: 1.6; fill: none; stroke-linecap: round; }
+.dg-dim { opacity: 0.5; transition: opacity 0.3s; }
+
+/* "In practice" pill, next to the section tag. Set with `practice: true` in the slide frontmatter. */
+.dm-practice-tag {
+  font-family: ui-monospace, Menlo, monospace; font-size: 0.55rem; letter-spacing: 0.14em;
+  color: var(--dm-purple); background: var(--dm-authentic); border-radius: 999px; padding: 0.2rem 0.6rem;
+}
+
+/* What-if pill, same family as the practice pill but grey: a stage the knowledge agent doesn't have yet. Set with `whatif: acts` or `whatif: code`. */
+.dm-agent-tag {
+  font-family: ui-monospace, Menlo, monospace; font-size: 0.55rem; letter-spacing: 0.14em;
+  color: var(--dm-muted); background: var(--dm-gray); border-radius: 999px; padding: 0.2rem 0.6rem;
+}
+
+/* Lab slides: one large question or answer, a violet question for the room, a task line, a muted folder line. */
+.lab-q { margin-top: 2.4rem; font-size: 1.9rem; line-height: 1.35; font-weight: 500; color: var(--dm-navy); max-width: 46rem; }
+.lab-key { margin-top: 1rem; font-size: 1.2rem; color: var(--dm-muted); }
+.lab-ask { margin-top: 2.4rem; font-size: 1.9rem; font-weight: 700; color: var(--dm-purple); }
+.lab-task { margin-top: 1.8rem; font-size: 1.3rem; line-height: 1.5; color: var(--dm-navy); max-width: 46rem; }
+.lab-meta { margin-top: 2rem; font-size: 1rem; color: var(--dm-muted); }
+.lab-hints { list-style: none; padding: 0; margin-top: 2.4rem; font-size: 1.4rem; line-height: 1.5; }
+.lab-hints li { margin: 0 0 1.8rem; }
+.lab-hints b { display: block; font-weight: 600; color: var(--dm-purple); }
+.lab-chat .dm-msg .dm-msg-bubble { font-size: 0.95rem; }
+.lab-chat .dm-msg .dm-msg-name { font-size: 0.72rem; }
+.lab-chat-sm.lab-chat .dm-msg .dm-msg-bubble { font-size: 0.88rem; }
+.lab-chat-lg.lab-chat .dm-msg .dm-msg-bubble { font-size: 1.2rem; }

@@ -2,12 +2,19 @@
   "name": "slidev-theme-dataminded",
   "version": "0.1.0",
   "private": true,
-  "keywords": ["slidev-theme", "slidev", "dataminded"],
-  "engines": { "slidev": ">=0.50.0" },
+  "keywords": ["slidev-theme", "slidev"],
+  "engines": { "slidev": ">=0.48.0" },
   "slidev": {
     "colorSchema": "light",
     "defaults": {
-      "transition": "slide-left"
+      "aspectRatio": "16/9",
+      "canvasWidth": 980,
+      "transition": "fade",
+      "fonts": {
+        "sans": "DM Sans",
+        "serif": "El Messiri",
+        "provider": "google"
+      }
     }
   }
 }

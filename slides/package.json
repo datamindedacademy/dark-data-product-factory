@@ -3,21 +3,15 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "slidev slides.md --port 3030",
+    "dev": "slidev slides.md --open",
     "build": "slidev build slides.md",
-    "export": "slidev export slides.md --per-slide --wait 2000"
-  },
-  "dependencies": {
-    "@slidev/cli": "52.19.1",
-    "@slidev/theme-default": "^0.25.0",
-    "slidev-theme-dataminded": "file:./theme"
+    "pdf": "slidev export slides.md --output capstone.pdf --timeout 60000",
+    "pptx": "slidev export slides.md --format pptx --output capstone.pptx --timeout 60000"
   },
   "devDependencies": {
-    "@iconify-json/mdi": "^1.2.0",
-    "floating-vue": "5.2.2",
-    "playwright-chromium": "^1.48.0"
-  },
-  "overrides": {
-    "floating-vue": "5.2.2"
+    "@iconify-json/ph": "^1.2.2",
+    "@slidev/cli": "^53.0.0",
+    "@slidev/theme-default": "^0.25.0",
+    "playwright-chromium": "^1.64.1"
   }
 }

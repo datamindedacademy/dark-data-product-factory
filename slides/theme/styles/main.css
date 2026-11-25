@@ -1,0 +1,113 @@
+/* Dataminded brand tokens (see dataminded-brand skill) */
+:root {
+  --dm-navy: #080635;
+  --dm-purple: #543edc;
+  --dm-deep-purple: #36288f;
+  --dm-lavender: #cacdf9;
+  --dm-card: #f5f4fe;
+  --dm-card-border: #e5e6ff;
+  --dm-gray: #f2f2f2;
+  --dm-muted: #4a4868;
+  --dm-gradient: linear-gradient(105deg, #05041c 0%, #1c1660 40%, #3a2db0 75%, #543edc 100%);
+  --slidev-theme-primary: #543edc;
+}
+
+.slidev-layout {
+  height: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  font-family: 'DM Sans', Arial, sans-serif;
+  color: var(--dm-navy);
+  background: #fff;
+  font-size: 1rem;
+  line-height: 1.45;
+}
+
+.slidev-layout h1,
+.slidev-layout h2,
+.slidev-layout h3 {
+  font-family: 'El Messiri', Arial, serif;
+  font-weight: 700;
+  color: var(--dm-navy);
+  line-height: 1.15;
+}
+.slidev-layout h1 { font-size: 2.1rem; margin-bottom: 1.4rem; text-wrap: balance; }
+.slidev-layout h2 { font-size: 1.4rem; margin-bottom: 0.6rem; }
+.slidev-layout h3 {
+  font-family: 'DM Sans', Arial, sans-serif;
+  font-size: 1rem;
+  margin-bottom: 0.3rem;
+}
+.slidev-layout p { margin: 0.4rem 0; }
+.slidev-layout a { color: var(--dm-purple); text-decoration: none; border-bottom: 1px solid var(--dm-lavender); }
+.slidev-layout strong { color: var(--dm-navy); font-weight: 700; }
+.slidev-layout ul { list-style: none; padding-left: 0; }
+.slidev-layout ul li { position: relative; padding-left: 1.1rem; margin: 0.45rem 0; }
+.slidev-layout ul li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.55em;
+  width: 0.4rem;
+  height: 0.4rem;
+  background: var(--dm-purple);
+  transform: rotate(45deg);
+}
+.slidev-layout ol { list-style: decimal; padding-left: 1.2rem; }
+.slidev-layout ol li { margin: 0.4rem 0; }
+.slidev-layout ol li::marker { color: var(--dm-purple); font-weight: 700; }
+
+.slidev-layout code {
+  font-size: 0.8em;
+  background: var(--dm-card);
+  color: var(--dm-deep-purple);
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+}
+.slidev-layout pre code { background: transparent; padding: 0; }
+.slidev-layout .slidev-code { border-radius: 10px; font-size: 0.72rem !important; background: var(--dm-card) !important; border: 1px solid var(--dm-card-border); }
+
+.slidev-layout blockquote {
+  border-left: 3px solid var(--dm-purple);
+  background: var(--dm-card);
+  border-radius: 0 10px 10px 0;
+  padding: 0.8rem 1.1rem;
+  font-family: 'El Messiri', Arial, serif;
+  font-size: 1.15rem;
+  color: var(--dm-navy);
+}
+.slidev-layout blockquote p { margin: 0; }
+
+.slidev-layout table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+.slidev-layout th {
+  text-align: left;
+  background: var(--dm-purple);
+  color: #fff;
+  font-weight: 700;
+  padding: 0.45rem 0.8rem;
+}
+.slidev-layout th:first-child { border-top-left-radius: 8px; }
+.slidev-layout th:last-child { border-top-right-radius: 8px; }
+.slidev-layout td { padding: 0.45rem 0.8rem; border-bottom: 1px solid var(--dm-card-border); }
+.slidev-layout tr:nth-child(even) td { background: var(--dm-card); }
+
+/* Small helpers usable in slides */
+.dm-muted { color: var(--dm-muted); }
+.dm-accent { color: var(--dm-purple); }
+.dm-bar { width: 3rem; height: 4px; background: var(--dm-purple); border-radius: 2px; }
+
+/* Checklist: <div class="dm-check"> around a markdown list */
+.dm-check ul li { padding: 0.6rem 0.8rem 0.6rem 2.4rem; margin: 0.5rem 0; background: var(--dm-card); border: 1px solid var(--dm-card-border); border-radius: 10px; }
+.dm-check ul li::before {
+  content: '✓'; transform: none; width: 1.3rem; height: 1.3rem; left: 0.7rem; top: 0.6rem;
+  border-radius: 999px; color: #fff; font-size: 0.75rem; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* Comparison table: <div class="dm-compare"> around a markdown table, first column as row labels */
+.dm-compare td:first-child { background: var(--dm-purple) !important; color: #fff; font-weight: 700; width: 7rem; vertical-align: top; }
+.dm-compare td:first-child strong { color: #fff; }
+.dm-compare td { vertical-align: top; line-height: 1.45; }
+.dm-compare-sm table { font-size: 0.68rem; }
+.dm-compare-sm th, .dm-compare-sm td { padding: 0.3rem 0.6rem; }
+.dm-compare-sm td:first-child { width: 6rem; }
