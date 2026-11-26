@@ -6,7 +6,7 @@ on:
   push:
     branches: [main]
   pull_request:
-    paths: ["factory/**", "benchmark/**", "agents/**", "tests/**", "standards/**", "scripts/**", "pyproject.toml", "uv.lock"]
+    paths: ["factory/**", "benchmark/**", "agents/**", "tests/**", "standards/**", "data/**", "pyproject.toml", "uv.lock"]
 
 permissions:
   contents: read

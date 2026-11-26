@@ -5,7 +5,6 @@ from __future__ import annotations
 import asyncio
 import json
 import shutil
-import sys
 from pathlib import Path
 
 import click
@@ -28,11 +27,16 @@ def main() -> None:
 
 @main.command()
 def setup() -> None:
-    """Generate the synthetic warehouse and build the base dbt project."""
+    """Load Fernhill's raw data (data/raw/*.parquet) into the warehouse and build the base dbt project."""
+    import duckdb
+
     paths.WAREHOUSE_DB.unlink(missing_ok=True)
-    console.print("[cyan]Generating raw data...[/cyan]")
-    workspace.sh([sys.executable, str(paths.ROOT / "scripts" / "generate_data.py"), "--db", str(paths.WAREHOUSE_DB)],
-                 paths.ROOT)
+    console.print("[cyan]Loading raw data...[/cyan]")
+    con = duckdb.connect(str(paths.WAREHOUSE_DB))
+    con.execute("create schema raw")
+    for f in sorted((paths.ROOT / "data" / "raw").glob("*.parquet")):
+        con.execute(f"create table raw.{f.stem} as select * from read_parquet('{f}')")
+    con.close()
     console.print("[cyan]dbt build...[/cyan]")
     r = workspace.sh([paths.tool("dbt"), "build", "--quiet"], paths.WAREHOUSE, check=False)
     if r.returncode != 0:
