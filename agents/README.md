@@ -45,6 +45,10 @@ def build(workspace):
     return base_agent(workspace, instructions=(HERE / "instructions.md").read_text())
 ```
 
+Each `agent.py` has the levers in it, commented out: a skill, a tool (with a working example for
+that station), an MCP server, another model, reasoning. Uncomment one, run the benchmark, keep it if
+the score goes up.
+
 The base agent can read and write files, run shell commands (Python with duckdb and pandas) and
 query the CSV files with SQL (`run_sql`), all inside its workspace. Its keyword arguments are your
 levers:
