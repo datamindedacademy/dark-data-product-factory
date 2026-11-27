@@ -62,14 +62,14 @@ benchmark/
   products/           Practice requests with their right answers
   stages/             Setup and graders per station
 factory/              The base agent, the line, the runner and tracing, scoring, the CLI
-docs/                 The capstone, the interview notes, the benchmark, the final
+docs/                 The capstone, the interviews, the benchmark, the final
 slides/               Kick-off slides (Slidev, Dataminded theme)
 ```
 
 ## Documentation
 
 - [docs/capstone-day.md](docs/capstone-day.md): the two days, what the final scores, the rules (start here)
-- [docs/interviews.md](docs/interviews.md): what Fernhill's people told you, and who owns which definition
+- [docs/interviews.md](docs/interviews.md): who is who at Fernhill, and the headlines of the interview recording
 - [agents/README.md](agents/README.md): how to improve an agent
 - [docs/benchmark.md](docs/benchmark.md): how grading works, how to write your own cases
 - [docs/competition.md](docs/competition.md): the final, for facilitators

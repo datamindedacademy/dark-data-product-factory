@@ -1,11 +1,13 @@
 # Stakeholder interviews
 
-Hand-out for the capstone day. You spent last week interviewing people at Fernhill Outfitters.
-These are your notes. None of this is written down anywhere in the data: the data shows *what*
-happened, not how Fernhill counts it. Your agents do not see this file. If you want your factory to
-know it, you have to put it there yourself (instructions, a skill, a semantic model, a tool).
+Last week you interviewed five people at Fernhill Outfitters. The recording of those interviews is
+handed out at the kick-off: a five-minute video. The slides in it show the headlines below; what
+people say in between is where the detail is. None of it is written down anywhere in the data: the
+data shows *what* happened, not how Fernhill counts it.
 
-Everything below holds for every request, not only for one.
+Your agents don't watch videos. If you want your factory to know what was said, you have to put it
+there yourself (instructions, a skill, a semantic model, a tool). Everything holds for every request,
+not only for one.
 
 ## Who is who
 
@@ -36,53 +38,12 @@ flowchart TD
     ana -.-|owns| t5(["raw and staging data"])
 ```
 
-## Sofie Maes, finance controller
+## The headlines
 
-> "Revenue is recognised when we ship. An order that is *placed* has not been paid or picked yet,
-> so it is not revenue, and a cancelled order never is. Shipped and delivered, that's it."
-
-> "Everything we report is in euro. The UK pays in pounds; we convert at the rate of the order day,
-> refunds too. A refund belongs to the order it refunds, not to the day the parcel came back."
-
-> "Revenue is after discounts and without shipping fees. Shipping is a cost recovery, not sales."
-
-> "Refunds for damaged goods are not lost money: we claim those back from the carrier. Every other
-> refund - wrong size, changed mind, not as described - is real lost revenue."
-
-## Lotte Janssens, CRM manager
-
-> "The app team tests checkout in production with accounts on `fernhill.test`. They are not
-> customers. Leave them out of anything that counts customers or revenue."
-
-> "When I say customer value or anything 'per customer', I mean the last full calendar year. Two-year
-> totals punish everyone who joined recently."
-
-> "The first-purchase channel is where someone *really* became a customer: their first order that
-> we actually shipped, over their whole history."
-
-> "Legal is strict: we may only contact customers who opted in to marketing. A list of people to
-> invite that includes anyone without opt-in is a GDPR incident, not a list."
-
-> "We never merge accounts. One account is one customer, even if two accounts look alike."
-
-## Marc Dubois, retail operations director
-
-> "London opened in June 2024. When we compare stores, a fair comparison starts in July 2024."
-
-> "Store orders are store revenue, wherever the customer lives."
-
-## Pieter De Wolf, performance marketing lead
-
-> "Marketing spend is booked in euro already, no conversion needed."
-
-> "BF25 is our Black Friday code. Those orders are normal revenue, we don't strip them out."
-
-## Ana Costa, data platform
-
-> "Orders land append-only. When ingestion replays a load you get the same order twice, with a later
-> `_loaded_at`; the latest load wins."
-
-> "Product categories are typed in by hand in the back office. You'll find every spelling."
-
-> "The export has tables nobody switched off when we migrated. If a table looks too convenient, ask
-> yourself who still fills it."
+| Who | On the slide |
+|---|---|
+| Sofie Maes, finance controller | Revenue is what has left the building · Everything we report is in euro · Revenue is mine to define |
+| Lotte Janssens, CRM manager | Our testers are not customers · A customer starts with a real first order · One account is one customer |
+| Marc Dubois, retail operations director | My managers trust the till report · Compare the stores fairly |
+| Pieter De Wolf, performance marketing lead | Does social pay off? · Spend is in euro already |
+| Ana Costa, data platform | Orders land append-only · Not every table is still filled |

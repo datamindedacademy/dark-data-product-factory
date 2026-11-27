@@ -259,7 +259,7 @@ clicks: 4
 </svg>
 
 <!--
-The capstone runs from Thursday afternoon to Friday, 14:00. Fork the repository: your team owns the whole line, and every station already works. On Thursday the whole team takes one agent, the one where the most points are, and goes through the full loop. Hand out interviews.md now: it holds the company know-how no agent can find in the data.
+The capstone runs from Thursday afternoon to Friday, 14:00. Fork the repository: your team owns the whole line, and every station already works. On Thursday the whole team takes one agent, the one where the most points are, and goes through the full loop. Hand out the interview recording now: it holds the company know-how no agent can find in the data.
 
 [click] Write a few benchmark cases for that agent and score it as it is. Without a score you can't tell whether a change helped.
 

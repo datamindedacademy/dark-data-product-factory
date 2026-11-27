@@ -42,7 +42,7 @@ Clock times follow from the bootcamp schedule. TODO: fill them in.
 
 | When | Block | You do |
 |---|---|---|
-| Thursday afternoon | **Kick-off** | Fork, open a Codespace (or `uv sync --extra dev`). Demo of the line on one request. The rules and the questions above. Hand-out: [interviews.md](interviews.md), what Fernhill's people told you and what no agent knows yet. |
+| Thursday afternoon | **Kick-off** | Fork, open a Codespace (or `uv sync --extra dev`). Demo of the line on one request. The rules and the questions above. Hand-out: the interview recording, what Fernhill's people told you and what no agent knows yet ([interviews.md](interviews.md) has who is who). |
 | Thursday afternoon | **One agent, the whole loop** | Pick the agent with the most points to win. Benchmark it, read its traces, change its context, repeat. Add cases of your own as you find failures. |
 | Friday | **More agents** | The same loop on other agents, or a new station. Check now and then that the whole line gets better: `factory line` on a practice request, then `factory score`. |
 | Friday | **Freeze** | Open a pull request from your fork to the organisers' repository. Title: your team name in capitals. Its head commit is what runs. |
@@ -65,7 +65,7 @@ numbers is context you pay for on every run.
 
 **One set of definitions.** A dark factory only works when every station means the same thing by
 "revenue" or "customer". The data shows what happened; how Fernhill *counts* it lives in people's
-heads, in the [interview notes](interviews.md). Writing those rules down once, as a skill or as a
+heads, in the [interviews](interviews.md). Writing those rules down once, as a skill or as a
 semantic model, gives intake, implement and review one source of truth, and it carries over to the
 final.
 

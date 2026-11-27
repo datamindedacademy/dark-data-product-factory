@@ -50,15 +50,20 @@ Ties: lower cost, then shorter duration.
 ## Make it hard: hidden know-how
 
 A capable model finds the traps that are visible in the data on its own: duplicate loads, cancelled
-orders, currencies. It can't find rules that exist only in people's heads. [interviews.md](interviews.md)
-has those, handed out at the kick-off; the baseline agents never see it. Most of the final's answers
+orders, currencies. It can't find rules that exist only in people's heads. The interview recording has those, handed
+out at the kick-off; [interviews.md](interviews.md) only has the org chart and the headlines. Its
+teleprompt script and Slidev deck are in the oracle repo (`interviews/`): the script is the full
+transcript, so it stays private. Render it before the day (`teleprompt build scripts/interviews.md`,
+with a speech server) and share the video, not the script. Most of the final's answers
 depend on them.
 
 Measured on 2026-11-27 on the final, three runs each with the Gemma baseline line: 4, 0 and 0 out of
 100, $0.02 to $0.14 and 1 to 5 minutes a run. With the interview notes pasted into every agent's
-instructions and nothing else changed: 34, 69 and 26. The notes are worth a lot, which is the intent, but
-pasting them in is not enough for a steady score. The cost and time scales are still to be set on a CI
-run of the baseline: roughly half and three times its cost and duration.
+instructions and nothing else changed: 34, 69 and 26. After the notes were rewritten to leave out the
+data codes (status values, the test domain, dates), five runs: 64, 2, 14, 28 and 65. The notes are
+worth a lot, which is the intent, but pasting them in is not enough for a steady score. The scales: full cost marks up to $0.035 and zero from
+$0.21 (half and three times the baseline); full time marks up to 3 minutes and zero from 15. The time
+scale is a guess from local runs plus CI setup: check it on the first CI run of the baseline.
 
 ## Runbook
 

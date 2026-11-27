@@ -20,8 +20,8 @@ from factory import answers, paths, workspace
 # Points per component (sum = 100). Efficiency: full marks at or below the first value, zero at or
 # above the second, and scaled by correctness. Calibrate on a baseline run before the day.
 POINTS = {"correctness": 70, "efficiency": 15, "benchmark": 15}
-COST_USD = (0.03, 0.20)    # TODO: recalibrate on the Gemma baseline line
-DURATION_S = (600.0, 2700.0)  # TODO: recalibrate on a CI run of the baseline
+COST_USD = (0.035, 0.21)   # half and three times the Gemma baseline line ($0.07 a run, 2026-11-27)
+DURATION_S = (180.0, 900.0)  # baseline ~4 min in CI (3 min line + setup): full marks to 3, zero from 15. Check on a CI run
 BENCHMARK_CASES = 3  # new, valid benchmark cases needed for full marks
 
 
