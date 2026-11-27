@@ -1,8 +1,0 @@
-id: governance-01-clean
-stage: governance
-description: The golden category_performance product with its dashboard. Fully compliant.
-tags: [dev]
-input:
-  product: category_performance
-expected:
-  violations: []

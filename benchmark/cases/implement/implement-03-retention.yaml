@@ -1,8 +1,8 @@
 id: implement-03-retention
 stage: implement
-description: Implement the retention cohort triangle (needs a month spine for inactive months).
-tags: [dev]
+description: Answer the questions of a right spec. Graded per question, within 0.5%.
 input:
-  spec: products/customer_retention/spec.yaml
+  issue: products/customer_retention/issue.md
+  spec: products/customer_retention/spec.json
 expected:
-  hidden_checks: [Q3.store_m3_2024]
+  answers: products/customer_retention/answers.json

@@ -1,5 +1,10 @@
 # Settings for the whole line. Yours to change: the final reads this file from your fork.
 
-# Rework rounds after review and governance send the product back. More rounds can fix more,
-# but each one costs money and minutes, and the final stops the line at 45 minutes.
+# The stations, in order. The line starts with intake and needs implement. Add your own agent
+# (a folder under agents/ with an agent.py): before implement it runs once; after implement it
+# checks the answers, like review, and writes output/<name>.json in the review format.
+stations: [intake, implement, review]
+
+# Rework rounds after a checker sends the answers back. More rounds can fix more, but each one
+# costs money and minutes, and the final stops the line at 45 minutes.
 max_rework: 1

@@ -1,8 +1,8 @@
 id: implement-01-category
 stage: implement
-description: Implement category performance from the golden spec. Two checks are hidden from the agent.
-tags: [dev]
+description: Answer the questions of a right spec. Graded per question, within 0.5%.
 input:
-  spec: products/category_performance/spec.yaml
+  issue: products/category_performance/issue.md
+  spec: products/category_performance/spec.json
 expected:
-  hidden_checks: [Q1.by_category_2024, Q3.share_tents_2025]
+  answers: products/category_performance/answers.json

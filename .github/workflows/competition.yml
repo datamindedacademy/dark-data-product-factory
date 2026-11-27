@@ -1,12 +1,11 @@
-# The final challenge: run one team's factory on a request and score the product against a hidden oracle.
+# The final: run one team's factory on a request and score its answers against the hidden right answers.
 #
 # This workflow lives in the organisers' repository and is the only thing that produces a score.
-# A team cannot change it or anything it runs: the checkout is always this repository, and from the
-# team's commit only `agents/` (run job) and `benchmark/cases/` (build job) are overlaid.
+# From the team's commit only `agents/` (run job) and `benchmark/cases/` (grade job, data files only)
+# are overlaid; everything else is this repository's code.
 #
-#   run    has the API key, runs team code     ─▶ artifact `submission` (spec, models, board, traces)
-#   build  no secrets, runs untrusted SQL only ─▶ artifact `build` (warehouse.duckdb, build.json, cases.json)
-#   grade  has the hidden oracle, no team code ─▶ score.json, score.md
+#   run    has the API key, runs team code       ─▶ artifact `submission` (answers.json, run summaries)
+#   grade  has the right answers, no team code   ─▶ score.json, score.md
 #
 # Design, runbook and the loopholes that remain: docs/competition.md
 name: "competition · final challenge"
@@ -25,11 +24,11 @@ on:
         description: "Commit to run: the full SHA recorded at the freeze"
         required: true
       oracle:
-        description: "Product id of the oracle: in benchmark/products (practice) or in the private oracle repository (final)"
+        description: "Request id: a folder in benchmark/products (practice) or in the private oracle repository (final)"
         required: true
         default: category_performance
       issue:
-        description: "Issue number of the request. Empty = practice: the issue of the public product."
+        description: "Issue number of the request. Empty = practice: the public request's issue.md."
       pr:
         description: "Pull request to post the score on (optional)"
 
@@ -66,20 +65,19 @@ jobs:
           if [ -n "$ISSUE" ]; then
             gh issue view "$ISSUE" --repo "$GITHUB_REPOSITORY" --json title,body --jq '"# \(.title)\n\n\(.body)\n"' > "$RUNNER_TEMP/issue.md"
           else
-            factory ci final-issue --issue "benchmark/products/$ORACLE/issue.md" --oracle "benchmark/products/$ORACLE/spec.yaml" > "$RUNNER_TEMP/issue.md"
+            cp "benchmark/products/$ORACLE/issue.md" "$RUNNER_TEMP/issue.md"
           fi
       - name: Overlay the team's agents
         run: |
           git fetch --quiet --no-tags --depth 1 "https://github.com/$REPO.git" "$SHA"
           rm -rf agents
           git checkout --quiet FETCH_HEAD -- agents
-      # Team code runs from here on. Nothing this job produces is trusted by the next jobs.
+      # Team code runs from here on. Nothing this job produces is trusted by the grade job.
       - name: Run the team's factory
         timeout-minutes: 45
         env:
           LLM_API_KEY: ${{ secrets[format('LLM_API_KEY_{0}', inputs.team)] || secrets.LLM_API_KEY }}
-          FACTORY_MODEL: ${{ vars.FACTORY_MODEL }}
-        run: factory e2e --issue "$RUNNER_TEMP/issue.md"   # rework limit: the team's agents/line.yaml
+        run: factory line --issue "$RUNNER_TEMP/issue.md"   # stations and rework: the team's agents/line.yaml
       - name: Export the submission
         if: always()
         run: factory ci export-submission submission
@@ -90,46 +88,8 @@ jobs:
           path: submission/
           if-no-files-found: ignore
 
-  build:
-    needs: run
-    if: always()
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-      - uses: ./.github/actions/factory-setup
-      # Before the submission is on disk: a case can point at any file, and none of the team's may be code.
-      - name: Validate the team's new benchmark cases (data files only)
-        run: |
-          mkdir -p build
-          git fetch --quiet --no-tags --depth 1 "https://github.com/$REPO.git" "$SHA"
-          rm -rf benchmark/cases
-          git checkout --quiet FETCH_HEAD -- benchmark/cases
-          find benchmark/cases -type f ! \( -name '*.yaml' -o -name '*.yml' -o -name '*.sql' -o -name '*.md' -o -name '*.json' -o -name '*.jsonl' -o -name '*.delete' \) -delete
-          find benchmark/cases -type l -delete
-          git diff --cached --name-only --diff-filter=A HEAD -- benchmark/cases \
-            | { grep -E '^benchmark/cases/[a-z_]+/[^/]+\.yaml$' || true; } | head -6 \
-            | xargs -r factory ci check-cases --out build/cases.json
-      - uses: actions/download-artifact@v4
-        continue-on-error: true
-        with:
-          name: submission-${{ inputs.team }}
-          path: submission/
-      - name: Build the product from the submitted SQL and YAML
-        run: |
-          mkdir -p submission
-          factory ci build-submission submission build
-      - uses: actions/upload-artifact@v4
-        with:
-          name: build-${{ inputs.team }}
-          path: build/
-
   grade:
-    needs: [run, build]
+    needs: run
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -141,19 +101,25 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - uses: ./.github/actions/factory-setup   # also generates the pristine warehouse the reference queries run on
+      - uses: ./.github/actions/factory-setup
+      # The team's new cases are data: only YAML, JSON, Markdown and CSV files are kept.
+      - name: Validate the team's new benchmark cases
+        run: |
+          git fetch --quiet --no-tags --depth 1 "https://github.com/$REPO.git" "$SHA"
+          rm -rf benchmark/cases
+          git checkout --quiet FETCH_HEAD -- benchmark/cases
+          find benchmark/cases -type f ! \( -name '*.yaml' -o -name '*.yml' -o -name '*.md' -o -name '*.json' -o -name '*.csv' \) -delete
+          find benchmark/cases -type l -delete
+          git diff --cached --name-only --diff-filter=A HEAD -- benchmark/cases \
+            | { grep -E '^benchmark/cases/[a-z_]+/[^/]+\.yaml$' || true; } | head -6 \
+            | xargs -r factory ci check-cases --out cases.json
       - uses: actions/download-artifact@v4
         continue-on-error: true
         with:
           name: submission-${{ inputs.team }}
           path: submission/
-      - uses: actions/download-artifact@v4
-        continue-on-error: true
-        with:
-          name: build-${{ inputs.team }}
-          path: build/
-      - name: Fetch the hidden oracle
-        if: hashFiles(format('benchmark/products/{0}/spec.yaml', inputs.oracle)) == ''
+      - name: Fetch the hidden answers
+        if: hashFiles(format('benchmark/products/{0}/answers.json', inputs.oracle)) == ''
         uses: actions/checkout@v4
         with:
           repository: ${{ vars.ORACLE_REPO }}
@@ -166,19 +132,17 @@ jobs:
           # The team's final-only key: its total spend is the cost of this run. This job runs no team code.
           LLM_API_KEY: ${{ secrets[format('LLM_API_KEY_{0}', inputs.team)] }}
         run: |
-          mkdir -p submission build
-          spec="benchmark/products/$ORACLE/spec.yaml"; [ -f "$spec" ] || spec="oracle/products/$ORACLE/spec.yaml"
+          mkdir -p submission
+          right="benchmark/products/$ORACLE/answers.json"; [ -f "$right" ] || right="oracle/products/$ORACLE/answers.json"
           # Wall-clock time of the run job as GitHub measured it: the team cannot influence this number.
           duration=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/jobs" \
             --jq '.jobs[] | select(.name == "run") | (.completed_at | fromdate) - (.started_at | fromdate)')
-          # Cost as OpenRouter measured it on that key; the traces' own figure is only a fallback.
+          # Cost as OpenRouter measured it on that key; the run summaries' own figure is only a fallback.
           cost=""; [ -n "$LLM_API_KEY" ] && cost=$(factory ci key-usage) || true
-          factory ci score submission build --oracle "$spec" --duration-s "$duration" ${cost:+--cost-usd "$cost"} --team "$TEAM"
+          factory ci score submission --answers "$right" --cases cases.json --duration-s "$duration" ${cost:+--cost-usd "$cost"} --team "$TEAM"
           cat factory-out/score.md >> "$GITHUB_STEP_SUMMARY"
           if [ -n "$PR" ]; then gh pr comment "$PR" --repo "$GITHUB_REPOSITORY" --body-file factory-out/score.md; fi
       - uses: actions/upload-artifact@v4
         with:
           name: score-${{ inputs.team }}
-          path: |
-            factory-out/score.json
-            build/dashboard.html
+          path: factory-out/score.json

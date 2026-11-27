@@ -1,0 +1,7 @@
+store_id,store_name,city,country_code,opened_at
+S01,Fernhill Brussels,Brussels,BE,2019-03-01
+S02,Fernhill Antwerp,Antwerp,BE,2020-09-15
+S03,Fernhill Ghent,Ghent,BE,2021-05-01
+S04,Fernhill Amsterdam,Amsterdam,NL,2022-04-01
+S05,Fernhill Lille,Lille,FR,2023-10-01
+S06,Fernhill London,London,GB,2024-06-01

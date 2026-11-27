@@ -1,0 +1,9 @@
+{
+  "status": "infeasible",
+  "questions": [],
+  "assumptions": [],
+  "open_questions": [
+    "Where do the NPS survey answers live? No table in data/ has them."
+  ],
+  "reason": "There is no NPS or survey data: no table has survey answers or scores."
+}

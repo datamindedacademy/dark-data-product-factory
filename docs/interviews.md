@@ -1,11 +1,11 @@
 # Stakeholder interviews
 
 Hand-out for the capstone day. You spent last week interviewing people at Fernhill Outfitters.
-These are your notes. None of this is written down anywhere in the warehouse: the data shows *what*
+These are your notes. None of this is written down anywhere in the data: the data shows *what*
 happened, not how Fernhill counts it. Your agents do not see this file. If you want your factory to
-know it, you have to put it there yourself (a skill, a CLAUDE.md, a semantic model, a tool).
+know it, you have to put it there yourself (instructions, a skill, a semantic model, a tool).
 
-Everything below holds for every data product, not only for one.
+Everything below holds for every request, not only for one.
 
 ## Who is who
 
@@ -18,6 +18,8 @@ flowchart TD
     ceo --> retail["<b>Retail operations</b><br/>Marc Dubois, director"]
     ceo --> mkt["<b>Marketing</b>"]
     ceo --> tech["<b>Technology</b>"]
+    ceo --> merch["<b>Merchandising</b><br/>Sofie Claes, head"]
+    ceo --> cx["<b>Customer experience</b><br/>Elise Martin"]
 
     fin --> sofie["Sofie Maes<br/>finance controller"]
     retail --> stores["Six store managers<br/>Brussels, Antwerp, Ghent,<br/>Amsterdam, Lille, London"]
@@ -25,7 +27,7 @@ flowchart TD
     mkt --> pieter["Pieter De Wolf<br/>performance marketing lead"]
     tech --> ana["Ana Costa<br/>data platform"]
     tech --> app["Web shop and app team"]
-    tech --> ae["Analytics engineering<br/><i>you: the data products</i>"]
+    tech --> ae["Analytics engineering<br/><i>you: the answers</i>"]
 
     sofie -.-|owns| t1(["revenue, refunds, currencies"])
     lotte -.-|owns| t2(["customers, consent"])
@@ -77,7 +79,10 @@ flowchart TD
 
 ## Ana Costa, data platform
 
-> "Raw orders are append-only. When ingestion replays a load you get the same order twice; the
-> latest load wins. Staging already handles that, so build on staging or core, never on raw."
+> "Orders land append-only. When ingestion replays a load you get the same order twice, with a later
+> `_loaded_at`; the latest load wins."
 
-> "Product categories are typed in by hand. `stg_products` cleans them up; use that."
+> "Product categories are typed in by hand in the back office. You'll find every spelling."
+
+> "The export has tables nobody switched off when we migrated. If a table looks too convenient, ask
+> yourself who still fills it."

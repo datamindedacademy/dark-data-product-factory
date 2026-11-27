@@ -1,0 +1,26 @@
+{
+  "status": "ready",
+  "questions": [
+    {
+      "id": "Q1",
+      "question": "How many web and app sessions did each traffic source bring in 2025?",
+      "answer_format": "map traffic source -> count",
+      "definition": "Sessions in web_sessions.csv started in 2025, per traffic_source."
+    },
+    {
+      "id": "Q2",
+      "question": "What share of those sessions ended in an order, per traffic source?",
+      "answer_format": "map traffic source -> share (0..1)",
+      "definition": "Sessions of Q1 whose converted_order_id is a counted order, divided by all sessions of Q1. Count only orders that are shipped or delivered (not placed or cancelled), take the latest load of each order in orders.csv (ingestion replays the same order), and leave out customers with an email on fernhill.test (test accounts)."
+    },
+    {
+      "id": "Q3",
+      "question": "For each paid source, what was the net revenue of the orders it brought in 2025, per euro spent on it in 2025?",
+      "answer_format": "map paid source -> EUR per EUR",
+      "definition": "Net revenue of the counted orders converted by 2025 sessions of the source, divided by its 2025 spend in marketing_spend.csv (already in EUR; its channel matches traffic_source). Net revenue = unit_price * quantity - discount_amount per order line, minus refunds except for damaged goods, converted to EUR at the GBP rate of the order day (fx_rates.csv); EUR orders need no conversion. Shipping fees are not revenue. Count only orders that are shipped or delivered (not placed or cancelled), take the latest load of each order in orders.csv (ingestion replays the same order), and leave out customers with an email on fernhill.test (test accounts)."
+    }
+  ],
+  "assumptions": [],
+  "open_questions": [],
+  "reason": ""
+}

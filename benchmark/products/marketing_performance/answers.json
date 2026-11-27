@@ -1,0 +1,21 @@
+{
+  "Q1": {
+    "email": 10626,
+    "organic": 34069,
+    "paid_search": 27334,
+    "referral": 9237,
+    "social": 19785
+  },
+  "Q2": {
+    "email": 0.1042,
+    "organic": 0.059,
+    "paid_search": 0.0669,
+    "referral": 0.0752,
+    "social": 0.034
+  },
+  "Q3": {
+    "email": 34.255,
+    "paid_search": 4.841,
+    "social": 1.502
+  }
+}

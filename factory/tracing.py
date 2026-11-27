@@ -1,11 +1,12 @@
 """Turn an Agno run into a JSONL trace + a run summary.
 
 Every run of every agent writes ``trace.jsonl`` and ``summary.json`` in its run
-directory. The benchmark adds scores to the summary, and the line-manager agent
-reads traces from many runs to find bottlenecks - so keep this format stable.
+directory. The benchmark adds scores to the summary, and a line manager
+could read traces from many runs - so keep this format stable.
 
 trace.jsonl event types::
 
+    {"type": "reasoning", "turn": n, "text": "..."}            when the model reasons (effort=...)
     {"type": "assistant_text", "turn": n, "chars": n, "text": "..."}
     {"type": "tool_use", "turn": n, "id": ..., "name": "Bash", "input": {...}}
     {"type": "tool_result", "turn": n, "id": ..., "name": "Bash", "is_error": bool, "chars": n, "preview": "..."}
@@ -20,8 +21,6 @@ from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
-
-
 
 PREVIEW = 600
 
@@ -71,6 +70,8 @@ class Tracer:
         for m in out.messages or []:
             if m.role == "assistant":
                 self.turn += 1
+                if getattr(m, "reasoning_content", None):
+                    self._emit({"type": "reasoning", "turn": self.turn, "text": _trim(m.reasoning_content)})
                 if isinstance(m.content, str) and m.content.strip():
                     self.final_text = m.content
                     self._emit({"type": "assistant_text", "turn": self.turn, "chars": len(m.content), "text": _trim(m.content)})

@@ -1,14 +1,11 @@
 id: intake-04-stores-ambiguous
 stage: intake
-description: Asks for footfall and sales per m2 - neither exists. A good analyst asks instead of inventing.
-tags: [dev]
+description: Asks for footfall and sales per m2, and neither exists. A good analyst asks instead of inventing.
 input:
   issue: products/store_performance/issue.md
 expected:
   status: [needs_clarification, infeasible]
-  oracle_spec: products/store_performance/oracle_spec.yaml
-  reason_keywords: [footfall, visitor, square, m2, "m²", floor area, store size]
-  traps:
-    - {id: no_footfall, keywords: [footfall, visitor count, visitors]}
-    - {id: no_floor_area, keywords: [square met, m2, "m²", floor area, store size, surface]}
-    - {id: london_new, keywords: [london, opened, like-for-like, like for like]}
+  right_spec: products/store_performance/spec.json
+  mentions:
+    - {id: no_footfall, any: [footfall, visitor]}
+    - {id: no_floor_area, any: [square met, m2, "m²", floor area, store size]}

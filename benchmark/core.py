@@ -34,7 +34,7 @@ class Case:
     tags: list[str] = field(default_factory=list)
 
     @classmethod
-    def load(cls, path: Path) -> "Case":
+    def load(cls, path: Path) -> Case:
         raw = yaml.safe_load(path.read_text())
         return cls(path=path, tags=raw.pop("tags", []), **raw)
 

@@ -1,112 +1,80 @@
-# The final challenge (organisers)
+# The final (organisers)
 
-On Friday the organisers open one GitHub issue with a data product request nobody
-has seen. Every team's factory builds it, unattended, in a CI pipeline the team cannot change.
-An automated benchmark scores the result. Highest score wins.
+On Friday the organisers open one GitHub issue with a request nobody has seen. Every team's factory
+answers it, unattended, in a CI pipeline the team cannot change. The answers are scored against the
+right answers, which only the organisers have. Highest score wins.
 
-Participants read [capstone-day.md](capstone-day.md). This page is the design, the runbook and
-the list of loopholes that remain.
+Participants read [capstone-day.md](capstone-day.md). This page is the design, the runbook and the
+loopholes that remain.
 
 ## Design
 
 ```
- team fork ── PR ──▶ organisers' repo                              private oracle repo
- (agents/, benchmark/cases/)   │                                     products/<id>/spec.yaml
+ team fork ── PR ──▶ organisers' repo                          private oracle repo
+ (agents/, benchmark/cases/)   │                                 products/<id>/issue.md, answers.json
                                ▼  competition.yml (workflow_dispatch, organisers only)
-   run    API key · team code     checkout = organisers' main, overlay agents/ from the frozen SHA
-          factory e2e --issue <the issue>  ─▶ artifact submission/ (spec, models, board, traces)
-   build  no secrets · untrusted SQL only  ─▶ artifact build/ (warehouse.duckdb, build.json, cases.json)
-          clean checkout + only .sql/.yml/.md from the submission; dbt build, checkup, dct
-   grade  hidden oracle · no team code     ─▶ score.json, score.md (step summary, PR comment)
-          reads JSON/YAML, queries the built database read-only
+   run    API key · team code          checkout = organisers' main, agents/ from the frozen commit
+          factory line --issue <the issue>   ─▶ artifact submission/ (answers.json, run summaries)
+   grade  right answers · no team code ─▶ score.json, score.md (step summary, PR comment)
+          checks the team's new cases, reads JSON only
 ```
 
-**Teams cannot change the grading.** They work in a fork. The score only ever comes from
-`competition.yml` in the organisers' repository, dispatched by an organiser. That workflow checks
-out the organisers' code and takes exactly two paths from the team's commit: `agents/` (their
-factory) and `benchmark/cases/` (their benchmark). The runner, the line, the CLI, the warehouse,
-the standards, the graders, the dependencies and the workflow itself are never theirs. Teams run
-the same workflow in their fork for practice. Changing it there changes nothing in the final.
+**Teams cannot change the grading.** The score only comes from `competition.yml` in the organisers'
+repository, dispatched by an organiser. It checks out the organisers' code and takes two folders from
+the team's commit: `agents/` (their factory) and `benchmark/cases/` (their cases, data files only).
+The base agent, the line, the graders, the data and the dependencies are never theirs.
 
-**Execution and grading are separate jobs.** The job that runs team code has the API key and no
-oracle. The job that has the oracle runs no team code. Between them sits a job with no secrets
-that builds the submitted SQL in a clean checkout. Only artifacts cross the boundaries, and each
-job treats what it receives as untrusted data: the build job copies only `.sql`, `.yml` and `.md`
-files (no dbt Python models), the grade job only parses YAML/JSON and queries a DuckDB file.
+**Running and grading are separate jobs.** The run job has the API key and no right answers. The
+grade job has the right answers and runs no team code: it only reads `answers.json` and the run
+summaries.
 
 **Freeze, then reveal.** Teams open a PR to the organisers' repo before the freeze. The organisers
-record each PR's head SHA, then open the issue, then dispatch the workflow with the recorded SHA.
-Commits pushed after the reveal are not run.
+record each PR's head commit, open the issue, then dispatch the workflow with the recorded commit.
 
-**The issue fixes the interface.** A hidden check can only query a model it can name, so the issue
-ends with an *Interface* section: product id, model names, grain, columns and the numbered
-questions. `factory ci final-issue` generates it from the oracle spec, so issue and oracle cannot
-drift. What stays hidden is what makes the numbers right: the business rules, the data traps and
-the checks themselves.
-
-**The oracle is a golden spec.** Same format as `benchmark/products/*/spec.yaml`. Its `outputs`
-are the published interface, its acceptance checks are the hidden checks, its question ids are
-what the dashboard must answer. Reference queries run on a pristine warehouse generated in the
-grade job, never on the database the team's SQL touched. A model that tampers with the source
-data only makes its own numbers wrong.
+**The request fixes the format.** It ends with an *Answers* section: a JSON template with every
+question and key. What stays hidden is what makes the numbers right: the business rules and the
+traps in the data.
 
 ## Scoring (100 points)
 
-Implemented in [`factory/competition.py`](../factory/competition.py), tested in
-`tests/test_competition.py`.
+In [`factory/competition.py`](../factory/competition.py), tested in `tests/test_line.py`.
 
-| Component | Points | How it is measured | Trusted? |
-|---|---:|---|---|
-| Correctness | 50 | Fraction of the oracle's hidden acceptance checks that pass on the built product | yes |
-| Interface | 5 | Fraction of the required models and columns that exist | yes |
-| Governance | 10 | `checkup` on the product, all rules it can check (GOV-001..010, the judgement ones as heuristics): `max(0, 1 - violations / 5)`; 0 when `dbt build` fails (a model or one of its tests) | yes |
-| Dashboard | 10 | One third each: `dct validate`, `dct render`, share of questions answered correctly (`Q1`... in query notes or chart titles of placed charts, *and* all of that question's hidden checks pass) | yes |
-| Efficiency | 15 | Correctness × mean of a cost score and a time score. Full marks up to $0.03 and 10 min, zero from $0.20 and 45 min, linear in between | yes: time from GitHub, cost from the team's OpenRouter key |
-| Own benchmark | 10 | New cases under `benchmark/cases/` that are valid (doing nothing scores 0, oracle scores 1); 3 valid cases = full marks | yes |
+| Component | Points | How it is measured |
+|---|---:|---|
+| Correctness | 70 | Per question, the share of its values within 0.5% of the right answer; the mean over the questions |
+| Efficiency | 15 | Correctness × the mean of a cost score and a time score, linear between full marks and zero (`COST_USD`, `DURATION_S`). Time from GitHub, cost from the team's own OpenRouter key |
+| Own benchmark | 15 | New, valid cases under `benchmark/cases/` (doing nothing scores 0, the right answer scores 1); 3 = full marks |
 
-Efficiency is multiplied by correctness so that a fast factory that builds nothing earns nothing.
-Ties: lower cost, then shorter duration. The score table is posted on the team's PR and in the
-workflow summary. It names which hidden checks failed, not what they check.
+Ties: lower cost, then shorter duration.
 
-`checkup` scores GOV-006, 008 and 010 with heuristics (`factory/tools/checkup.py`); the agents'
-`warehouse/checkup.yaml` does not enable them. GOV-011 (business rules) cannot be checked
-generically: put it in the oracle as acceptance checks (an `empty` check for QA accounts), so it
-counts under correctness.
+## Make it hard: hidden know-how
 
-### Make the oracle hard: hidden know-how
+A capable model finds the traps that are visible in the data on its own: duplicate loads, cancelled
+orders, currencies. It can't find rules that exist only in people's heads. [interviews.md](interviews.md)
+has those, handed out at the kick-off; the baseline agents never see it. Most of the final's answers
+depend on them.
 
-A capable model finds every trap that is visible in the data (cancelled orders, currencies,
-duplicates) on its own. What it cannot find is company know-how: rules that exist only in people's
-heads. [interviews.md](interviews.md) is the hand-out with those rules, given to teams at the
-kick-off; the baseline agents never see it. Base most of the oracle's checks on them. Measured on
-2026-11-25 with the hidden oracle and the Gemma baseline line, three runs: 5 to 14 / 100, $0.05 to
-$0.06 and about 3 minutes a run. The cost scale is set to half and three times that cost; the time
-scale still needs a CI run, because the run job includes setup.
+Measured on 2026-11-27 on the final, three runs each with the Gemma baseline line: 4, 0 and 0 out of
+100, $0.02 to $0.14 and 1 to 5 minutes a run. With the interview notes pasted into every agent's
+instructions and nothing else changed: 34, 69 and 26. The notes are worth a lot, which is the intent, but
+pasting them in is not enough for a steady score. The cost and time scales are still to be set on a CI
+run of the baseline: roughly half and three times its cost and duration.
 
 ## Runbook
 
 ### Weeks before
 
-1. Publish this repository as the organisers' repo. Teams get read access only: they fork.
-2. Secrets: `LLM_API_KEY_<TEAM>` per team (team name in capitals, `A-Z0-9_`): a fresh OpenRouter key
-   with a spend limit, used for nothing but that team's final run. The grade job reads the key's
-   spend and scores it as the run's cost, so never dispatch a practice run with it (practice in the
-   organisers' repository uses `LLM_API_KEY`, the fallback). `ORACLE_TOKEN`: read-only token for the
-   private oracle repository. Variable `ORACLE_REPO` (`owner/name`), optionally `FACTORY_MODEL`.
-3. Write the oracle in the private repo: `products/<id>/issue.md`, `spec.yaml`, `models/`,
-   `board.yml`, like a product in `benchmark/products/`. Use tables the public products barely
-   touch. Keep column descriptions neutral: they are published in the issue. Check it:
-
-   ```bash
-   mkdir -p sub && cp products/<id>/{spec.yaml,board.yml} sub/ && cp -r products/<id>/models sub/models
-   factory ci build-submission sub build
-   factory ci score sub build --oracle products/<id>/spec.yaml      # 50 / 5 / 10 / 10 expected
-   ```
-
-4. Calibrate: dispatch `competition.yml` with the baseline agents on a public product
-   (`oracle: category_performance`, no issue). Note score, cost and duration, put them on the
-   board on the day, and set `COST_USD` and `DURATION_S` in `factory/competition.py` to roughly
-   half and three times the baseline.
+1. Publish this repository as the organisers' repo. Teams fork it.
+2. Secrets: `LLM_API_KEY_<TEAM>` per team (team name in capitals): a fresh OpenRouter key with a
+   spend limit, used for nothing but that team's final run. The grade job reads the key's spend as
+   the run's cost, so never practise with it. `LLM_API_KEY` for practice runs. `ORACLE_TOKEN`: a
+   read-only token for the private oracle repo; variable `ORACLE_REPO` (`owner/name`).
+3. The oracle in the private repo: `products/<id>/issue.md` and `answers.json`, like the practice
+   requests in `benchmark/products/`, and the script that computes the answers. The practice requests'
+   scripts live there too (`products/practice/`): they spell out every rule, so they stay out of the
+   factory repo.
+4. Calibrate: dispatch `competition.yml` with the baseline agents on a practice request
+   (`oracle: category_performance`, no issue). Set `COST_USD` and `DURATION_S` from it.
 
 ### On the day
 
@@ -114,9 +82,8 @@ scale still needs a CI run, because the run job includes setup.
 # Freeze: one open PR per team, PR title = team name (A-Z, 0-9, _)
 gh pr list --json number,title,headRefOid,headRepositoryOwner,headRepository > freeze.json
 
-# Reveal: the issue with the generated interface section
-factory ci final-issue --issue products/$ID/issue.md --oracle products/$ID/spec.yaml > body.md
-ISSUE=$(gh issue create --title "Data product: ..." --body-file body.md | grep -o '[0-9]*$')
+# Reveal
+ISSUE=$(gh issue create --title "<the title in issue.md>" --body-file products/$ID/issue.md | grep -o '[0-9]*$')
 
 # Run every team at its frozen commit
 jq -r '.[] | [.title, "\(.headRepositoryOwner.login)/\(.headRepository.name)", .headRefOid, .number] | @tsv' freeze.json |
@@ -127,51 +94,28 @@ done
 # Leaderboard
 mkdir scores && cd scores && gh run list --workflow competition.yml --limit 30 --json databaseId --jq '.[].databaseId' |
   xargs -I{} gh run download {} --pattern 'score-*' --dir {} 2>/dev/null
-jq -s 'sort_by(-.total) | .[] | "\(.total)\t\(.team)\t$\(.cost_usd)\t\(.duration_s)s"' -r */*/factory-out/score.json
+jq -s 'sort_by(-.total) | .[] | "\(.total)\t$\(.cost_usd)\t\(.duration_s)s"' -r */*/score.json
 ```
 
-Before announcing a winner: compare the top teams' reported cost with the spend on their API key,
-and read the diff of their `agents/` directory.
+Before announcing a winner, read the diff of the top teams' `agents/` folder.
 
 ## Loopholes that remain
 
-- **The run job gives team code the API key.** It can be sent anywhere. Per-team keys with a spend
-  limit, revoked after the event, bound the damage. Nothing else in that job is worth stealing: the
-  token is read-only and the oracle is not there.
-- **A human in the loop.** The run job has open network access. Team code committed before the
-  freeze could fetch a hand-made solution written after the reveal. The freeze makes this
-  deliberate fraud that is visible in the PR diff, but only a runner with an egress allowlist
-  would prevent it.
-- **Cost is measured, not reported.** In the final the cost is the spend of the team's final-only
-  OpenRouter key, read by the grade job (`factory ci key-usage`), which runs no team code. The cost in
-  the traces is only a fallback, for practice runs and for a team without its own key. Duration is
-  measured by GitHub.
-- **"Built with Agno" is self-reported** for the same reason (`framework` in the traces, shown in
-  the score table). Facilitators check it at the block 1 checkpoint and in the diff.
-- **Untrusted SQL runs in the build job.** dbt and dbt charts run with DuckDB's external access
-  disabled (`warehouse/profiles.yml`), there are no secrets and no Python models are copied. But
-  dbt Jinja is expressive. Someone who broke out of that job could forge governance, dashboard and
-  benchmark results (30 points), not correctness: the right numbers are only in the oracle.
-- **One run per team.** Agents are noisy, so luck can decide a close race. Dispatch each team three
-  times and take the median if the budget allows.
-- **The benchmark score measures validity, not usefulness.** Three trivial but valid cases earn
-  full marks. Judge usefulness in the demos if it matters.
-- **The oracle leaks slowly.** Score tables name the failed check ids, and anyone with write access
-  to the organisers' repo can dispatch the workflow. Use a new oracle for a second round.
-- **There is no budget per agent.** The hard limits are the 45-minute step timeout and the spend limit
-  on the team's key.
-- **Forks must be readable** by the workflow. For private team repos, add a read token to the two
-  `git fetch` steps.
+- **The run job gives team code the API key.** Per-team keys with a spend limit, revoked after the
+  event, bound the damage. The right answers are not in that job.
+- **A human in the loop.** The run job has open network access, so code committed before the freeze
+  could fetch answers written after the reveal. The freeze makes that deliberate fraud, visible in the
+  diff; only a runner with an egress allowlist would prevent it.
+- **One run per team.** Agents are noisy. Dispatch each team three times and take the median if the
+  budget allows.
+- **The benchmark points measure validity, not usefulness.** Three trivial but valid cases earn full
+  marks. Judge usefulness in the demos if it matters.
+- **The right answers leak slowly.** The score table shows the score per question. Use a new request
+  for a second round.
 
 ## Trying it locally
 
-The three commands the workflow runs also work on a laptop, with a public product as the oracle:
-
 ```bash
-P=benchmark/products/marketing_performance
-factory ci final-issue --issue $P/issue.md --oracle $P/spec.yaml > issue.md
-factory e2e --issue issue.md                      # your line (API credits!)
-factory ci export-submission submission
-factory ci build-submission submission build
-factory ci score submission build --oracle $P/spec.yaml
+factory line --issue benchmark/products/marketing_performance/issue.md
+factory score runs/<the line run>
 ```

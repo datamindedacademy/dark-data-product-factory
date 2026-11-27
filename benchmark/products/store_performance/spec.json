@@ -1,0 +1,10 @@
+{
+  "status": "needs_clarification",
+  "questions": [],
+  "assumptions": [],
+  "open_questions": [
+    "Footfall and conversion of visitors need visitor counts, which we do not have. Where do they come from?",
+    "Sales per square metre needs the floor area of each store. Where is it kept?"
+  ],
+  "reason": "The data has no footfall (visitor counts) and no floor area (square metres) for the stores."
+}

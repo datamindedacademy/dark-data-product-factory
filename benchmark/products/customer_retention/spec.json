@@ -1,0 +1,26 @@
+{
+  "status": "ready",
+  "questions": [
+    {
+      "id": "Q1",
+      "question": "How many new customers did we get in each month of 2025?",
+      "answer_format": "map YYYY-MM -> count",
+      "definition": "A customer is an account (never merged). Their first purchase is their first counted order over the whole history. Count customers per month of that first order. Count only orders that are shipped or delivered (not placed or cancelled), take the latest load of each order in orders.csv (ingestion replays the same order), and leave out customers with an email on fernhill.test (test accounts)."
+    },
+    {
+      "id": "Q2",
+      "question": "Of the customers whose first purchase was in 2024, what share bought again within 90 days of it? Split by the channel of their first purchase.",
+      "answer_format": "map web/app/store -> share (0..1)",
+      "definition": "For customers whose first counted order was in 2024: the share with another counted order within 90 days after it, by the channel (web, app, store) of that first order. Count only orders that are shipped or delivered (not placed or cancelled), take the latest load of each order in orders.csv (ingestion replays the same order), and leave out customers with an email on fernhill.test (test accounts)."
+    },
+    {
+      "id": "Q3",
+      "question": "How many customers bought from us in 2025?",
+      "answer_format": "number",
+      "definition": "Distinct customers with a counted order in 2025. Count only orders that are shipped or delivered (not placed or cancelled), take the latest load of each order in orders.csv (ingestion replays the same order), and leave out customers with an email on fernhill.test (test accounts)."
+    }
+  ],
+  "assumptions": [],
+  "open_questions": [],
+  "reason": ""
+}

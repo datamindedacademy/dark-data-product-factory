@@ -1,17 +1,13 @@
 id: intake-03-retention
 stage: intake
-description: Cohort retention. Traps - QA accounts (inflate retention), cancelled orders, signup is not acquisition.
-tags: [dev]
+description: Cohorts. A first purchase is the first counted order.
 input:
   issue: products/customer_retention/issue.md
 expected:
   status: ready
-  oracle_spec: products/customer_retention/spec.yaml
-  traps:
-    - {id: qa_accounts, keywords: [fernhill.test, qa account, test account, internal account, qa tester, test customer]}
-    - {id: cancelled_orders, keywords: [cancel]}
-    - {id: first_order_not_signup, keywords: [first order, first purchase, first non-cancelled, signed_up_at, signup]}
-  questions:
-    - {id: new_customers, all_of: [[new customer, cohort size, cohort_customers, acquired, acquisition]]}
-    - {id: retention, all_of: [[retention, retain, repeat, come back, buy again, active]]}
-    - {id: by_first_channel, all_of: [[store], [channel, online, web, app]]}
+  right_spec: products/customer_retention/spec.json
+  questions: [Q1, Q2, Q3]
+  mentions:
+    - {id: counted_orders, any: [shipped, delivered]}
+    - {id: test_accounts, any: [fernhill.test, test account, qa account]}
+    - {id: first_purchase, any: [first counted order, first shipped, first order]}

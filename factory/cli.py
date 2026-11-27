@@ -1,340 +1,74 @@
-"""`factory` command line."""
+"""`factory`: run the line, benchmark the agents, score answers."""
 
 from __future__ import annotations
 
 import asyncio
 import json
-import shutil
+import os
 from pathlib import Path
 
 import click
-import yaml
 from rich.console import Console
 from rich.table import Table
 
-from factory import paths, workspace
+from factory import paths
 
 console = Console()
+STATIONS = ["intake", "implement", "review"]
 
 
 @click.group()
 def main() -> None:
-    """Dark data product factory: agents that turn requests into data products."""
-
-
-# ----------------------------------------------------------------------- setup
+    """Fernhill's dark factory: a request in, answers out."""
 
 
 @main.command()
-def setup() -> None:
-    """Load Fernhill's raw data (data/raw/*.parquet) into the warehouse and build the base dbt project."""
-    import duckdb
-
-    paths.WAREHOUSE_DB.unlink(missing_ok=True)
-    console.print("[cyan]Loading raw data...[/cyan]")
-    con = duckdb.connect(str(paths.WAREHOUSE_DB))
-    con.execute("create schema raw")
-    for f in sorted((paths.ROOT / "data" / "raw").glob("*.parquet")):
-        con.execute(f"create table raw.{f.stem} as select * from read_parquet('{f}')")
-    con.close()
-    console.print("[cyan]dbt build...[/cyan]")
-    r = workspace.sh([paths.tool("dbt"), "build", "--quiet"], paths.WAREHOUSE, check=False)
-    if r.returncode != 0:
-        console.print(r.stdout[-3000:])
-        raise SystemExit("dbt build failed")
-    workspace.sh([paths.tool("dbt"), "parse", "--quiet"], paths.WAREHOUSE)
-    v = workspace.sh([paths.tool("dct"), "--no-send-anonymous-usage-stats", "validate"], paths.WAREHOUSE, check=False)
-    console.print(v.stdout.strip())
-    console.print(f"[green]Warehouse ready:[/green] {paths.WAREHOUSE_DB}")
-
-
-# ------------------------------------------------------------------- utilities
-
-
-@main.command()
-@click.argument("kind", type=click.Choice(["spec", "review", "governance", "line_manager"]))
-@click.argument("file", type=click.Path(exists=True, path_type=Path))
-def validate(kind: str, file: Path) -> None:
-    """Validate an artifact against its contract (used by the agents themselves)."""
-    from factory.contracts import SCHEMAS
-
-    text = file.read_text()
-    data = yaml.safe_load(text) if file.suffix in (".yaml", ".yml") else json.loads(text)
-    try:
-        SCHEMAS[kind].model_validate(data)
-    except Exception as exc:  # noqa: BLE001
-        console.print(f"[red]INVALID[/red] {file}:\n{exc}")
-        raise SystemExit(1) from exc
-    console.print(f"[green]OK[/green]: {file} is a valid {kind}")
-
-
-@main.command()
-@click.argument("spec", type=click.Path(exists=True, path_type=Path))
-@click.option("--db", type=click.Path(exists=True, path_type=Path), default=None,
-              help="DuckDB file (default: warehouse/warehouse.duckdb next to the spec's repo)")
-def accept(spec: Path, db: Path | None) -> None:
-    """Run a spec's executable acceptance checks."""
-    from factory.acceptance import run_acceptance
-    from factory.contracts import DataProductSpec
-
-    db = db or Path("warehouse/warehouse.duckdb")
-    report = run_acceptance(DataProductSpec.load(spec), db)
-    console.print(report.as_text(), markup=False)
-    raise SystemExit(0 if report.passed == report.total else 1)
-
-
-@main.command()
-@click.option("--project", type=click.Path(exists=True, path_type=Path), default=paths.WAREHOUSE)
-@click.option("--product", default=None, help="Data product id: scopes the Fernhill rules (--tag data_product=...)")
-@click.option("--json", "as_json", is_flag=True, help="Print the Fernhill rule violations as JSON instead")
-def checkup(project: Path, product: str | None, as_json: bool) -> None:
-    """Run checkup on the dbt project (dbt parse + `checkup run`, config in checkup.yaml)."""
-    from factory.tools import checkup as ck
-
-    workspace.sh([paths.tool("dbt"), "parse", "--quiet"], project)
-    if as_json:
-        result = ck.run(project, product)
-        console.print_json(json.dumps(result))
-        raise SystemExit(1 if result["violations"] else 0)
-    res = ck.checkup_cli(project, product)
-    console.print(res.stdout, end="", markup=False, highlight=False)
-    raise SystemExit(res.returncode)
-
-
-# ------------------------------------------------------------------ run agents
-
-
-@main.command()
-@click.argument("stage", type=click.Choice(["intake", "implement", "review", "governance", "bi", "line_manager"]))
-@click.option("--agent-dir", type=click.Path(exists=True, path_type=Path), default=None)
-@click.option("--case", "case_id", default=None, help="Benchmark case id to set the workspace up from")
-@click.option("--issue", type=click.Path(exists=True, path_type=Path), default=None, help="intake: issue markdown")
-def run(stage: str, agent_dir: Path | None, case_id: str | None, issue: Path | None) -> None:
-    """Run one agent once, in a fresh workspace (from a benchmark case or an issue)."""
-    from benchmark.core import load_cases
-    from benchmark.harness import STAGES
-    from factory.runner import run_agent_sync
-
-    run_dir = paths.RUNS / workspace.new_run_id(stage)
-    ws = workspace.create(run_dir)
-    ctx = {}
-    if case_id:
-        case = next((c for c in load_cases(stage) if c.id == case_id), None)
-        if not case:
-            raise SystemExit(f"no {stage} case {case_id!r}")
-        ctx = STAGES[stage].setup(case, ws)
-    elif issue and stage == "intake":
-        workspace.copy_db(ws)
-        shutil.copy(issue, ws / "input" / "issue.md")
-    else:
-        raise SystemExit("pass --case <id> (see `factory bench list`) or, for intake, --issue <file>")
-    summary = run_agent_sync(agent_dir or paths.AGENTS / stage, ws, run_dir, ctx={**ctx, "repo_root": paths.ROOT},
-                             meta={"stage": stage, "case": case_id or (issue.stem if issue else None)})
-    console.print_json(json.dumps({k: summary.get(k) for k in
-                                   ("status", "total_cost_usd", "num_turns", "duration_ms", "tool_calls", "missing_outputs")}))
-    if case_id:
-        from benchmark.core import weighted
-
-        grades = STAGES[stage].grade(case, ws)
-        for g in grades:
-            console.print(f"  {g.name:<24} {g.score:.2f} (w{g.weight:g})  {g.detail[:120]}", markup=False)
-        console.print(f"[bold]score {weighted(grades):.3f}[/bold]")
-    console.print(f"workspace: {ws}\ntrace:     {run_dir / 'trace.jsonl'}")
-
-
-@main.command()
-@click.option("--issue", type=click.Path(exists=True, path_type=Path), required=True)
-@click.option("--agent", "overrides", multiple=True, help="Swap a station: --agent bi=agents/bi-v2")
+@click.option("--issue", type=click.Path(exists=True, path_type=Path), required=True, help="The request")
+@click.option("--agent", "swaps", multiple=True, help="Swap a station: --agent review=agents/review-v2")
 @click.option("--max-rework", type=int, default=None, help="Default: max_rework in agents/line.yaml")
-@click.option("--stop-after", type=click.Choice(["intake", "implement", "review", "governance"]), default=None)
-def e2e(issue: Path, overrides: tuple[str, ...], max_rework: int, stop_after: str | None) -> None:
-    """Run the whole factory line on one issue."""
-    from factory.e2e import run_line
+def line(issue: Path, swaps: tuple[str, ...], max_rework: int | None) -> None:
+    """Run the whole line on one request."""
+    from factory.line import run_line
 
-    agents = {k: Path(v) for k, v in (o.split("=", 1) for o in overrides)}
-    summary = asyncio.run(run_line(issue, agents, max_rework, stop_after))
-    console.print_json(json.dumps(summary, default=str))
-
-
-# ---------------------------------------------------------------------------- ci
+    agents = {k: Path(v) for k, v in (s.split("=", 1) for s in swaps)}
+    out = asyncio.run(run_line(issue, agents, max_rework))
+    console.print_json(json.dumps({k: out[k] for k in ("outcome", "total_cost_usd", "open_findings")}))
+    console.print(f"answers: {Path(out['workspace']) / 'output' / 'answers.json'}")
 
 
-@main.group()
-def ci() -> None:
-    """Stations as CI steps (used by .github/workflows/factory-*.yml; runnable locally).
-
-    Each step works on the current checkout, writes markdown + JSON to factory-out/
-    (FACTORY_OUT) and step outputs to $GITHUB_OUTPUT.
-    """
-
-
-_spec_opt = click.option("--spec", "spec", type=click.Path(exists=True, path_type=Path), required=True,
-                         help="Spec in the checkout, e.g. warehouse/specs/<id>.yaml")
-
-
-@ci.command("intake")
-@click.option("--issue-file", type=click.Path(exists=True, path_type=Path), required=True,
-              help="Issue title, body and comments as markdown (the workflow writes it with `gh issue view`)")
-def ci_intake(issue_file: Path) -> None:
-    """Issue -> spec. Writes warehouse/specs/<id>.yaml when the spec is ready."""
-    from factory import ci as c
-
-    spec = c.intake(issue_file)
-    raise SystemExit(0 if spec else 1)
-
-
-@ci.command("implement")
-@_spec_opt
-@click.option("--feedback", type=click.Path(path_type=Path), default=None, help="Findings of a previous round")
-def ci_implement(spec: Path, feedback: Path | None) -> None:
-    """Spec -> dbt models in warehouse/models/marts/<id>/ of the checkout."""
-    from factory import ci as c
-
-    c.implement(spec, feedback)
-
-
-@ci.command("bi")
-@_spec_opt
-def ci_bi(spec: Path) -> None:
-    """Spec + models -> warehouse/charts/<id>.yml in the checkout."""
-    from factory import ci as c
-
-    c.bi(spec)
-
-
-@ci.command("checks")
-@_spec_opt
-def ci_checks(spec: Path) -> None:
-    """Deterministic gates, no LLM: dbt build, acceptance checks, checkup, dct validate."""
-    from factory import ci as c
-
-    raise SystemExit(0 if c.checks(spec) else 1)
-
-
-@ci.command("review")
-@_spec_opt
-@click.option("--base", default="origin/main", show_default=True, help="Git ref the change is compared with")
-@click.option("--pr-body", type=click.Path(path_type=Path), default=None)
-def ci_review(spec: Path, base: str, pr_body: Path | None) -> None:
-    """Review the checkout against --base. Writes review.md / review.json."""
-    from factory import ci as c
-
-    raise SystemExit(0 if c.review(spec, base, pr_body) else 1)
-
-
-@ci.command("governance")
-@click.option("--product", required=True)
-def ci_governance(product: str) -> None:
-    """Check the product against the standards. Writes governance.md / governance.json."""
-    from factory import ci as c
-
-    raise SystemExit(0 if c.governance(product) else 1)
-
-
-@ci.command("feedback")
-def ci_feedback() -> None:
-    """Merge checks/review/governance findings into factory-out/feedback.md."""
-    from factory import ci as c
-
-    c.feedback()
-
-
-@ci.command("line-manager")
-@click.option("--runs", "runs_dir", type=click.Path(exists=True, path_type=Path), required=True)
-def ci_line_manager(runs_dir: Path) -> None:
-    """Traces of recent pipeline runs -> factory-out/line_manager.md."""
-    from factory import ci as c
-
-    raise SystemExit(0 if c.line_manager(runs_dir) else 1)
-
-
-@ci.command("collect-runs")
-@click.argument("dest", type=click.Path(path_type=Path))
-def ci_collect_runs(dest: Path) -> None:
-    """Copy run summaries + traces (no workspaces) to DEST for artifact upload."""
-    from factory import ci as c
-
-    console.print(f"collected {c.collect_runs(dest)} runs into {dest}")
-
-
-# ------------------------------------------------------------------ competition
-# The final challenge (docs/competition.md). Runnable locally with a public product as the oracle.
-
-
-@ci.command("final-issue")
-@click.option("--issue", type=click.Path(exists=True, path_type=Path), required=True, help="The request, as markdown")
-@click.option("--oracle", type=click.Path(exists=True, path_type=Path), required=True, help="Golden spec of the product")
-def ci_final_issue(issue: Path, oracle: Path) -> None:
-    """Print the issue with the required interface (product id, models, columns) appended."""
+@main.command()
+@click.argument("run_dir", type=click.Path(exists=True, path_type=Path))
+@click.option("--answers", "right", type=click.Path(exists=True, path_type=Path), default=None,
+              help="The right answers (default: the practice request's answers.json, found from the issue)")
+def score(run_dir: Path, right: Path | None) -> None:
+    """Score a line run, the way the final does (without the benchmark points)."""
     from factory import competition
 
-    print(competition.final_issue(issue, oracle), end="")
+    summary = json.loads((run_dir / "line_summary.json").read_text())
+    right = right or next((p.parent / "answers.json" for p in paths.PRODUCTS.glob("*/issue.md")
+                           if p.read_text() == (run_dir / "workspace" / "input" / "issue.md").read_text()), None)
+    if not right:
+        raise SystemExit("pass --answers: this run's issue is not one of the practice requests")
+    from datetime import datetime
+
+    sub = run_dir / "submission"
+    (sub / "runs").mkdir(parents=True, exist_ok=True)
+    (sub / "answers.json").write_text(json.dumps(summary.get("answers")))
+    for s in run_dir.glob("*/summary.json"):
+        (sub / "runs" / s.parent.name).mkdir(exist_ok=True)
+        (sub / "runs" / s.parent.name / "summary.json").write_text(s.read_text())
+    started = datetime.strptime(run_dir.name[:15], "%Y%m%d-%H%M%S").timestamp()
+    s = competition.score(sub, right, duration_s=(run_dir / "line_summary.json").stat().st_mtime - started)
+    console.print(competition.score_markdown(run_dir.name, s), markup=False)
 
 
-@ci.command("export-submission")
-@click.argument("dest", type=click.Path(path_type=Path))
-def ci_export_submission(dest: Path) -> None:
-    """Copy the product and traces of the latest `factory e2e` run to DEST."""
-    from factory import competition
+@main.command()
+@click.argument("name", type=click.Choice(["spec", "review"]))
+def schema(name: str) -> None:
+    """Print the JSON schema of spec.json or review.json."""
+    from factory.contracts import json_schema
 
-    console.print(f"submission: {competition.export_submission(dest) or 'no e2e run found'}")
-
-
-@ci.command("check-cases")
-@click.argument("cases", nargs=-1, type=click.Path(exists=True, path_type=Path))
-@click.option("--out", type=click.Path(path_type=Path), required=True, help="JSON file: case -> [valid, detail]")
-def ci_check_cases(cases: tuple[Path, ...], out: Path) -> None:
-    """Check benchmark cases the way pytest does: doing nothing scores 0, the oracle scores 1."""
-    from factory import competition
-
-    result = {str(c): competition.valid_case(c) for c in cases}
-    out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps(result, indent=2))
-    console.print_json(json.dumps(result))
-
-
-@ci.command("build-submission")
-@click.argument("submission", type=click.Path(exists=True, path_type=Path))
-@click.argument("out", type=click.Path(path_type=Path))
-def ci_build_submission(submission: Path, out: Path) -> None:
-    """Build a submission in a clean workspace: OUT/warehouse.duckdb + OUT/build.json. No LLM."""
-    from factory import competition
-
-    r = competition.build_submission(submission, out)
-    console.print_json(json.dumps({k: v for k, v in r.items() if k != "dbt_tail"}, default=str))
-
-
-@ci.command("score")
-@click.argument("submission", type=click.Path(exists=True, path_type=Path))
-@click.argument("build", type=click.Path(exists=True, path_type=Path))
-@click.option("--oracle", type=click.Path(exists=True, path_type=Path), required=True, help="Golden spec (hidden checks)")
-@click.option("--pristine-db", type=click.Path(exists=True, path_type=Path), default=paths.WAREHOUSE_DB, show_default=True,
-              help="Untouched warehouse the reference queries run on")
-@click.option("--duration-s", type=float, default=None, help="Wall-clock seconds of the run job")
-@click.option("--cost-usd", type=float, default=None, help="Measured cost (factory ci key-usage); default: from the traces")
-@click.option("--team", default="team")
-def ci_score(submission: Path, build: Path, oracle: Path, pristine_db: Path, duration_s: float | None,
-             cost_usd: float | None, team: str) -> None:
-    """Score a built submission against the oracle: factory-out/score.json + score.md. No LLM, no team code."""
-    from factory import ci as c
-    from factory import competition
-
-    s = competition.score(submission, build, oracle, pristine_db, duration_s, cost_usd)
-    c._write("score.json", json.dumps({"team": team, **s}, indent=2))
-    md = competition.score_markdown(team, s)
-    c._write("score.md", md)
-    print(md)
-    c.set_outputs(total=s["total"])
-
-
-@ci.command("key-usage")
-def ci_key_usage() -> None:
-    """Print what the OpenRouter key in LLM_API_KEY has spent, in USD, once the number settles."""
-    import os
-
-    from factory import competition
-
-    print(f"{competition.key_usage(os.environ['LLM_API_KEY']):.6f}")
+    print(json_schema(name))
 
 
 # -------------------------------------------------------------------- benchmark
@@ -342,41 +76,26 @@ def ci_key_usage() -> None:
 
 @main.group()
 def bench() -> None:
-    """Benchmark the agents of the line."""
-
-
-@bench.command("list")
-@click.option("--suite", type=click.Path(exists=True, path_type=Path), default=None)
-def bench_list(suite: Path | None) -> None:
-    """List benchmark cases."""
-    from benchmark.core import load_cases
-    from benchmark.harness import STAGES
-
-    t = Table("stage", "case", "description")
-    for s in STAGES:
-        for c in load_cases(s, suite):
-            t.add_row(s, c.id, c.description.strip().split(". ")[0][:90])
-    console.print(t)
+    """Benchmark one station on its cases (benchmark/cases/<station>/)."""
 
 
 @bench.command("run")
-@click.argument("stage", type=click.Choice(["intake", "implement", "review", "governance", "bi", "line_manager"]))
-@click.option("--agent-dir", type=click.Path(exists=True, path_type=Path), default=None,
-              help="Agent variant to benchmark (default: agents/<stage>)")
+@click.argument("stage", type=click.Choice(STATIONS))
+@click.option("--agent", "agent_dir", type=click.Path(exists=True, path_type=Path), default=None,
+              help="Agent folder to benchmark (default: agents/<stage>)")
 @click.option("--case", "cases", multiple=True, help="Only these case ids (prefix match)")
-@click.option("--oracle", is_flag=True, help="Grade the golden outputs instead of running an agent")
-@click.option("--judge", is_flag=True, help="Enable LLM-as-judge graders")
+@click.option("--oracle", is_flag=True, help="Grade the right answers instead of running an agent")
 @click.option("--repeat", default=1, show_default=True, help="Runs per case (agents are not deterministic)")
-@click.option("--parallel", default=2, show_default=True)
+@click.option("--parallel", default=3, show_default=True)
 @click.option("--suite", type=click.Path(exists=True, path_type=Path), default=None,
-              help="Alternative case directory (e.g. cases you keep out of the repository)")
-@click.option("--label", default=None, help="Name for this variant in the report")
-def bench_run(stage: str, agent_dir: Path | None, cases: tuple[str, ...], oracle: bool, judge: bool, repeat: int,
+              help="Another case folder (e.g. cases you keep out of the repository)")
+@click.option("--label", default=None, help="Name for this version in the report")
+def bench_run(stage: str, agent_dir: Path | None, cases: tuple[str, ...], oracle: bool, repeat: int,
               parallel: int, suite: Path | None, label: str | None) -> None:
-    """Run (or oracle) a stage's benchmark cases and grade them."""
+    """Run a station's cases and grade them."""
     from benchmark.harness import run_stage
 
-    out = asyncio.run(run_stage(stage, agent_dir, list(cases) or None, oracle, judge, repeat, parallel, suite, label))
+    out = asyncio.run(run_stage(stage, agent_dir, list(cases) or None, oracle, False, repeat, parallel, suite, label))
     t = Table("case", "score", "± stdev", "runs")
     for cid, c in out["cases"].items():
         t.add_row(cid, f"{c['mean']:.3f}", f"{c['stdev']:.3f}", str(len(c["runs"])))
@@ -384,7 +103,7 @@ def bench_run(stage: str, agent_dir: Path | None, cases: tuple[str, ...], oracle
     for r in out["runs"]:
         for g in r["grades"]:
             if g["score"] < 1:
-                console.print(f"  {r['case']:<28} {g['name']:<24} {g['score']:.2f}  {g['detail'][:110]}", markup=False)
+                console.print(f"  {r['case']:<28} {g['name']:<18} {g['score']:.2f}  {g['detail'][:110]}", markup=False)
     console.print(f"[bold]{stage} · {out['label']} · score {out['score']:.3f} · ${out['total_cost_usd']:.2f} "
                   f"· {out['mean_turns']} turns/run · {out['mean_duration_s']}s/run[/bold]")
     console.print(f"runs in {out['bench_dir']}")
@@ -392,18 +111,9 @@ def bench_run(stage: str, agent_dir: Path | None, cases: tuple[str, ...], oracle
 
 @bench.command("report")
 @click.option("--stage", default=None)
-@click.option("--markdown", is_flag=True, help="Print a markdown table (for CI summaries and PR comments)")
-def bench_report(stage: str | None, markdown: bool) -> None:
-    """Leaderboard of every recorded benchmark run (benchmark/results/)."""
+def bench_report(stage: str | None) -> None:
+    """Every recorded benchmark run (benchmark/results/), best first."""
     from benchmark.harness import load_results
-
-    if markdown:
-        rows = [r for r in sorted(load_results(), key=lambda r: (r["stage"], -r["score"])) if not stage or r["stage"] == stage]
-        print("| stage | label | fingerprint | score | $ total | $/run | turns | s/run |\n|---|---|---|---:|---:|---:|---:|---:|")
-        for r in rows:
-            print(f"| {r['stage']} | {r['label']} | `{r.get('agent_fingerprint')}` | {r['score']:.3f} | {r['total_cost_usd']:.2f} "
-                  f"| {r['mean_cost_usd']:.2f} | {r['mean_turns']} | {r['mean_duration_s']} |")
-        return
 
     t = Table("finished", "stage", "label", "fingerprint", "score", "$ total", "$/run", "turns", "s/run", "cases")
     for r in sorted(load_results(), key=lambda r: (r["stage"], -r["score"])):
@@ -413,6 +123,82 @@ def bench_report(stage: str | None, markdown: bool) -> None:
                   f"{r['total_cost_usd']:.2f}", f"{r['mean_cost_usd']:.2f}", str(r["mean_turns"]),
                   str(r["mean_duration_s"]), str(len(r["cases"])))
     console.print(t)
+
+
+@bench.command("check")
+@click.argument("case_files", nargs=-1, required=True, type=click.Path(exists=True, path_type=Path))
+def bench_check(case_files: tuple[Path, ...]) -> None:
+    """Check that a case is valid: doing nothing scores 0, the right answer scores 1."""
+    from factory.competition import valid_case
+
+    for f in case_files:
+        ok, why = valid_case(f)
+        console.print(f"{'[green]valid[/green]' if ok else '[red]invalid[/red]'}  {f}  {why}")
+
+
+# -------------------------------------------------------------------- the final (CI)
+
+
+@main.group()
+def ci() -> None:
+    """Steps of the competition workflow."""
+
+
+@ci.command("export-submission")
+@click.argument("dest", type=click.Path(path_type=Path))
+def ci_export(dest: Path) -> None:
+    from factory.competition import export_submission
+
+    export_submission(dest)
+
+
+@ci.command("report")
+def ci_report() -> None:
+    """Write the issue comment for the latest line run to factory-out/comment.md; print the outcome."""
+    from factory.line import report_markdown
+
+    summary = json.loads(sorted(paths.RUNS.glob("*/line_summary.json"))[-1].read_text())
+    Path("factory-out").mkdir(exist_ok=True)
+    Path("factory-out/comment.md").write_text(report_markdown(summary))
+    print(summary["outcome"])
+
+
+@ci.command("check-cases")
+@click.argument("case_files", nargs=-1, type=click.Path(exists=True, path_type=Path))
+@click.option("--out", type=click.Path(path_type=Path), required=True)
+def ci_check_cases(case_files: tuple[Path, ...], out: Path) -> None:
+    """Validate a team's new cases; write {case: [valid, why]}."""
+    from factory.competition import valid_case
+
+    out.write_text(json.dumps({str(f): valid_case(f) for f in case_files}, indent=2))
+
+
+@ci.command("score")
+@click.argument("submission", type=click.Path(path_type=Path))
+@click.option("--answers", "right", type=click.Path(exists=True, path_type=Path), required=True)
+@click.option("--cases", type=click.Path(path_type=Path), default=None, help="Output of check-cases")
+@click.option("--duration-s", type=float, default=None)
+@click.option("--cost-usd", type=float, default=None, help="Measured spend of the team's key")
+@click.option("--team", default="team")
+def ci_score(submission: Path, right: Path, cases: Path | None, duration_s: float | None, cost_usd: float | None,
+             team: str) -> None:
+    from factory import competition
+
+    c = json.loads(cases.read_text()) if cases and cases.exists() else {}
+    s = competition.score(submission, right, duration_s, cost_usd, c)
+    out = Path("factory-out")
+    out.mkdir(exist_ok=True)
+    (out / "score.json").write_text(json.dumps(s, indent=2))
+    (out / "score.md").write_text(competition.score_markdown(team, s))
+    console.print(competition.score_markdown(team, s), markup=False)
+
+
+@ci.command("key-usage")
+def ci_key_usage() -> None:
+    """Print what the key in LLM_API_KEY has spent, in USD."""
+    from factory.competition import key_usage
+
+    print(key_usage(os.environ["LLM_API_KEY"]))
 
 
 if __name__ == "__main__":

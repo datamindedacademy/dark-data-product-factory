@@ -1,0 +1,11 @@
+id: review-04-placed-orders
+stage: review
+description: Placed orders count as revenue; only shipped and delivered do.
+input:
+  issue: products/category_performance/issue.md
+  spec: products/category_performance/spec.json
+  work: fixtures/review/placed_orders
+expected:
+  verdict: request_changes
+  defects:
+    - {id: placed, any: [placed, shipped, delivered, status]}

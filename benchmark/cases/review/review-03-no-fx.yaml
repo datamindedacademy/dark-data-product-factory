@@ -1,0 +1,11 @@
+id: review-03-no-fx
+stage: review
+description: GBP orders are summed as if they were euro.
+input:
+  issue: products/category_performance/issue.md
+  spec: products/category_performance/spec.json
+  work: fixtures/review/no_fx
+expected:
+  verdict: request_changes
+  defects:
+    - {id: currency, any: [gbp, fx, exchange rate, currency, pound]}

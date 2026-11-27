@@ -1,8 +1,8 @@
 id: implement-02-marketing
 stage: implement
-description: Implement marketing channel performance (daily x channel, sessions, conversions, spend).
-tags: [dev]
+description: Answer the questions of a right spec. Graded per question, within 0.5%.
 input:
-  spec: products/marketing_performance/spec.yaml
+  issue: products/marketing_performance/issue.md
+  spec: products/marketing_performance/spec.json
 expected:
-  hidden_checks: [Q1.sessions_total, Q3.paid_search_cpo_2025]
+  answers: products/marketing_performance/answers.json

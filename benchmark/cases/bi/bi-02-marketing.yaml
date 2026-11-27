@@ -1,7 +1,0 @@
-id: bi-02-marketing
-stage: bi
-description: Dashboard for marketing performance; ratios must be ratio-of-sums, ROAS only for paid channels.
-tags: [dev]
-input:
-  spec: products/marketing_performance/spec.yaml
-expected: {}

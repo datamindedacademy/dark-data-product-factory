@@ -12,7 +12,6 @@ step() {
 }
 
 step "dependencies (Python 3.15)" uv sync --python 3.15 --extra dev
-step "warehouse" .venv/bin/factory setup
 step "Phoenix" uvx --python 3.13 --from arize-phoenix phoenix --help
 step "opencode" bash -c "curl -fsSL https://opencode.ai/v2/install | bash"
 

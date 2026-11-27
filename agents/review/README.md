@@ -1,10 +1,11 @@
 # Review
 
-Checks the change like a careful colleague: right numbers, matches the spec, true tests and docs.
+Checks the answers and the code that produced them. Sends them back with findings when an answer is
+wrong.
 
-**In** `git diff main...feature`, `input/spec.yaml` **Out** `output/review.json`
+**In** `input/spec.json`, `output/answers.json`, `output/analysis.*` **Out** `output/review.json`
 
 **Try**
-- dbt data tests and unit tests of your own, to prove a bug
-- Totals reconciled against `fct_orders`
-- Approving clean changes: a false alarm stalls the line
+- Checks you can run, like data tests: every order counted once, totals that add up, no test accounts
+- Recompute one answer a different way and compare
+- A checklist of the mistakes your benchmark found

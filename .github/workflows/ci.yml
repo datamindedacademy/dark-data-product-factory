@@ -1,12 +1,12 @@
-# CI for the factory itself (no LLM calls, no API key needed):
-# the benchmark's own tests and the oracle run of every station.
+# CI for the factory itself (no LLM calls, no API key needed): the tests, which also check that
+# every benchmark case is valid (doing nothing scores 0, the right answer scores 1).
 name: "ci · factory"
 
 on:
   push:
     branches: [main]
   pull_request:
-    paths: ["factory/**", "benchmark/**", "agents/**", "tests/**", "standards/**", "data/**", "pyproject.toml", "uv.lock"]
+    paths: ["factory/**", "benchmark/**", "agents/**", "tests/**", "data/**", "pyproject.toml", "uv.lock"]
 
 permissions:
   contents: read
@@ -14,15 +14,8 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/factory-setup
-      - name: Benchmark self-tests (oracle = 1.0, doing nothing = 0, defects are caught)
-        run: pytest -q
-      - name: Oracle run of every station
-        run: |
-          for s in intake implement review governance bi line_manager; do
-            factory bench run "$s" --oracle --parallel 3
-          done
-          factory bench report --markdown >> "$GITHUB_STEP_SUMMARY"
+      - run: pytest -q

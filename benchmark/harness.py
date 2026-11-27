@@ -17,15 +17,12 @@ from pathlib import Path
 from typing import Any
 
 from benchmark.core import Case, Grade, Stage, grades_json, load_cases, weighted
-from benchmark.stages.bi import BI
-from benchmark.stages.governance import Governance
 from benchmark.stages.implement import Implement
 from benchmark.stages.intake import Intake
-from benchmark.stages.line_manager import LineManager
 from benchmark.stages.review import ReviewStage
 from factory import paths, workspace
 
-STAGES: dict[str, Stage] = {s.name: s for s in [Intake(), Implement(), ReviewStage(), Governance(), BI(), LineManager()]}
+STAGES: dict[str, Stage] = {s.name: s for s in [Intake(), Implement(), ReviewStage()]}
 
 
 async def run_case(stage: Stage, case: Case, bench_dir: Path, agent_dir: Path | None, oracle: bool,
@@ -44,7 +41,7 @@ async def run_case(stage: Stage, case: Case, bench_dir: Path, agent_dir: Path | 
         from factory.runner import run_agent
 
         summary = await run_agent(agent_dir or paths.AGENTS / stage.agent, ws, run_dir,
-                                  ctx={**ctx, "repo_root": paths.ROOT}, meta=meta)
+                                  ctx=ctx, meta=meta)
     try:
         grades = await asyncio.to_thread(stage.grade, case, ws, judge)
     except Exception as exc:  # noqa: BLE001 - a grader crash should not kill the whole benchmark

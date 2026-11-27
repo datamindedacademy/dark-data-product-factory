@@ -1,0 +1,26 @@
+{
+  "status": "ready",
+  "questions": [
+    {
+      "id": "Q1",
+      "question": "What was the net revenue of each product category in 2025, in EUR?",
+      "answer_format": "map category -> EUR",
+      "definition": "Net revenue = unit_price * quantity - discount_amount per order line, minus refunds except for damaged goods, converted to EUR at the GBP rate of the order day (fx_rates.csv); EUR orders need no conversion. Shipping fees are not revenue. Count only orders that are shipped or delivered (not placed or cancelled), take the latest load of each order in orders.csv (ingestion replays the same order), and leave out customers with an email on fernhill.test (test accounts). Orders placed in 2025 (UTC). Clean the category names in products.csv (casing, spaces)."
+    },
+    {
+      "id": "Q2",
+      "question": "What share of the units sold in 2025 was returned, per category?",
+      "answer_format": "map category -> share (0..1)",
+      "definition": "Units returned (every reason) / units sold, on the order lines of counted 2025 orders. Count only orders that are shipped or delivered (not placed or cancelled), take the latest load of each order in orders.csv (ingestion replays the same order), and leave out customers with an email on fernhill.test (test accounts)."
+    },
+    {
+      "id": "Q3",
+      "question": "What was the net revenue of Footwear per month of 2025, in EUR?",
+      "answer_format": "map YYYY-MM -> EUR",
+      "definition": "As Q1, for category Footwear, per month of the order date. Count only orders that are shipped or delivered (not placed or cancelled), take the latest load of each order in orders.csv (ingestion replays the same order), and leave out customers with an email on fernhill.test (test accounts)."
+    }
+  ],
+  "assumptions": [],
+  "open_questions": [],
+  "reason": ""
+}

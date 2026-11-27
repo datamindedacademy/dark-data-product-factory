@@ -1,19 +1,19 @@
 ---
 theme: ./theme
-title: Dark data product factory
+title: Dark data factory
 layout: cover
 tag: 'Kick-off'
 date: AI Academy
 ---
 
-# Dark data product factory
+# Dark data factory
 
 Capstone · AI Engineering Bootcamp
 
-<p style="margin-top: 2.2rem; max-width: 30rem; font-size: 1.35rem; line-height: 1.45; color: #fff">A line of agents that builds data products, with nobody in the loop</p>
+<p style="margin-top: 2.2rem; max-width: 30rem; font-size: 1.35rem; line-height: 1.45; color: #fff">A line of agents that answers business questions, with nobody in the loop</p>
 
 <!--
-A dark factory runs with the lights off, because nobody is on the floor. Today every team builds one, and the product is a data product.
+A dark factory runs with the lights off, because nobody is on the floor. Today every team builds one, for data.
 -->
 
 ---
@@ -117,7 +117,7 @@ clicks: 2
   <!-- the data version -->
   <g v-click="2">
     <text x="40" y="314" style="font-size: 17px; font-weight: 700; fill: #080635">→ a request in</text>
-    <text x="820" y="314" text-anchor="end" style="font-size: 17px; font-weight: 700; fill: #543edc">a data product out →</text>
+    <text x="820" y="314" text-anchor="end" style="font-size: 17px; font-weight: 700; fill: #543edc">answers out →</text>
   </g>
 </svg>
 
@@ -133,16 +133,16 @@ A dark factory is a factory that runs with nobody on the floor. Machines build, 
 
 [click] With only machines inside, you can turn the lights off. That's where the name comes from: lights-out manufacturing. The usual example is FANUC in Japan, where robots build robots.
 
-[click] Today we build one for data: a request goes in, a tested data product comes out, and nobody touches it on the way.
+[click] Today we build one for data: questions go in, checked answers come out, and nobody touches them on the way.
 -->
 
 ---
 layout: default
 tag: 'The idea'
-clicks: 2
+clicks: 3
 ---
 
-# A line of agents builds the product
+# Three agents answer the request
 
 <svg class="dg" viewBox="0 0 860 270" style="margin-top: 1.6rem">
   <defs>
@@ -150,72 +150,63 @@ clicks: 2
     <marker id="arr-02s" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#543edc"/></marker>
   </defs>
   <!-- the request -->
-    <g class="dg-node">
-      <rect x="0" y="122" width="112" height="56" rx="3"/>
-      <text x="12" y="143" class="dg-cap">REQUEST</text>
-      <text x="12" y="164" style="font-size: 15px; font-weight: 700">GitHub issue</text>
-    </g>
-  <!-- the stations: review and governance run side by side -->
+  <g class="dg-node">
+    <rect x="0" y="122" width="120" height="56" rx="3"/>
+    <text x="12" y="143" class="dg-cap">REQUEST</text>
+    <text x="12" y="164" style="font-size: 15px; font-weight: 700">questions</text>
+  </g>
+  <!-- the stations -->
   <g v-click="1">
     <g class="dg-line" style="fill: none">
-      <path d="M112 150 H140" marker-end="url(#arr-02)"/>
-      <path d="M256 150 H284" marker-end="url(#arr-02)"/>
-      <path d="M400 150 C 416 150, 414 114, 428 114" marker-end="url(#arr-02)"/>
-      <path d="M400 150 C 416 150, 414 186, 428 186" marker-end="url(#arr-02)"/>
-      <path d="M544 114 C 560 114, 558 150, 572 150" marker-end="url(#arr-02)"/>
-      <path d="M544 186 C 560 186, 558 150, 572 150"/>
-      <path d="M688 150 H716" marker-end="url(#arr-02)"/>
+      <path d="M120 150 H164" marker-end="url(#arr-02)"/>
+      <path d="M300 150 H344" marker-end="url(#arr-02)"/>
+      <path d="M480 150 H524" marker-end="url(#arr-02)"/>
+      <path d="M660 150 H704" marker-end="url(#arr-02)"/>
     </g>
     <g class="dg-solid">
-      <rect x="144" y="122" width="112" height="56" rx="3"/>
-      <text x="156" y="143" class="dg-cap">INTAKE</text>
-      <text x="156" y="164" style="font-size: 13px">spec.yaml</text>
+      <rect x="168" y="122" width="132" height="56" rx="3"/>
+      <text x="180" y="143" class="dg-cap">INTAKE</text>
+      <text x="180" y="164" style="font-size: 13px">spec.json</text>
     </g>
-    <ph-clipboard-text-bold x="232" y="150" width="18" height="18" style="color: #b3a7f2" />
+    <ph-clipboard-text-bold x="274" y="150" width="18" height="18" style="color: #b3a7f2" />
     <g class="dg-solid">
-      <rect x="288" y="122" width="112" height="56" rx="3"/>
-      <text x="300" y="143" class="dg-cap">IMPLEMENT</text>
-      <text x="300" y="164" style="font-size: 13px">dbt models</text>
+      <rect x="348" y="122" width="132" height="56" rx="3"/>
+      <text x="360" y="143" class="dg-cap">IMPLEMENT</text>
+      <text x="360" y="164" style="font-size: 13px">answers.json</text>
     </g>
-    <ph-database-bold x="376" y="150" width="18" height="18" style="color: #b3a7f2" />
+    <ph-database-bold x="454" y="150" width="18" height="18" style="color: #b3a7f2" />
     <g class="dg-solid">
-      <rect x="432" y="86" width="112" height="56" rx="3"/>
-      <text x="444" y="107" class="dg-cap">REVIEW</text>
-      <text x="444" y="128" style="font-size: 13px">findings</text>
+      <rect x="528" y="122" width="132" height="56" rx="3"/>
+      <text x="540" y="143" class="dg-cap">REVIEW</text>
+      <text x="540" y="164" style="font-size: 13px">findings</text>
     </g>
-    <ph-magnifying-glass-bold x="520" y="114" width="18" height="18" style="color: #b3a7f2" />
-    <g class="dg-solid">
-      <rect x="432" y="158" width="112" height="56" rx="3"/>
-      <text x="444" y="179" class="dg-cap">GOVERNANCE</text>
-      <text x="444" y="200" style="font-size: 13px">checkup</text>
-    </g>
-    <ph-shield-check-bold x="520" y="186" width="18" height="18" style="color: #b3a7f2" />
-    <g class="dg-solid">
-      <rect x="576" y="122" width="112" height="56" rx="3"/>
-      <text x="588" y="143" class="dg-cap">BI</text>
-      <text x="588" y="164" style="font-size: 13px">dashboard</text>
-    </g>
-    <ph-chart-bar-bold x="664" y="150" width="18" height="18" style="color: #b3a7f2" />
+    <ph-magnifying-glass-bold x="634" y="150" width="18" height="18" style="color: #b3a7f2" />
     <g class="dg-node">
-      <rect x="720" y="122" width="140" height="56" rx="3"/>
-      <text x="732" y="143" class="dg-cap">DELIVERED</text>
-      <text x="732" y="164" style="font-size: 15px; font-weight: 700">data product</text>
+      <rect x="708" y="122" width="152" height="56" rx="3"/>
+      <text x="720" y="143" class="dg-cap">DELIVERED</text>
+      <text x="720" y="164" style="font-size: 15px; font-weight: 700">answers</text>
     </g>
   </g>
   <!-- the rework loop -->
   <g v-click="2">
-    <path d="M488 86 C 488 40, 344 40, 344 116" class="dg-line-soft" marker-end="url(#arr-02s)"/>
-    <path d="M488 214 C 488 260, 344 260, 344 184" class="dg-line-soft" marker-end="url(#arr-02s)"/>
-    <text x="416" y="34" text-anchor="middle" class="dg-cap">REWORK</text>
+    <path d="M594 122 C 594 60, 414 60, 414 118" class="dg-line-soft" marker-end="url(#arr-02s)"/>
+    <text x="504" y="56" text-anchor="middle" class="dg-cap">REWORK</text>
+  </g>
+  <!-- your own stations -->
+  <g v-click="3">
+    <rect x="348" y="214" width="312" height="40" rx="3" style="fill: none; stroke: #543edc; stroke-dasharray: 5 4"/>
+    <text x="504" y="239" text-anchor="middle" style="font-size: 14px; fill: #543edc">+ any agent you add</text>
   </g>
 </svg>
 
 <!--
-A stakeholder at Fernhill Outfitters, our invented outdoor-gear retailer, files a GitHub issue.
+A manager at Fernhill Outfitters, our invented outdoor-gear retailer, asks a few numbered questions.
 
-[click] Five agents turn it into a data product. Intake writes an executable spec and implement writes the dbt models. Review and governance check them at the same time, then BI builds the dashboard.
+[click] Three agents answer them from the data, a folder of CSV files. Intake writes a spec: how to compute each answer. Implement computes the answers and keeps its code. Review checks both.
 
-[click] Review and governance can send the work back to implement. How many rounds is your call, in agents/line.yaml: more rounds can fix more, but each costs money and minutes, and the final stops at 45 minutes.
+[click] Review can send the answers back to implement. How many rounds is your call, in agents/line.yaml: more rounds can fix more, but each costs money and minutes, and the final stops at 45 minutes.
+
+[click] Those three are the line. You can add your own agents, before implement or as another checker next to review.
 -->
 
 ---
@@ -276,7 +267,7 @@ The capstone runs from Thursday afternoon to Friday, 14:00. Fork the repository:
 
 [click] Change one thing in its context: the prompt, a skill with Fernhill's rules, a tool or an MCP server. Run the benchmark again. Better: keep the change. Worse: undo it. Then the next round, until Thursday ends.
 
-[click] On Friday, take the same loop to as many other agents of the line as you want. Pick by where the points are: correctness weighs half the final score, so intake and implement usually pay off most. Then freeze your fork; the final runs and everything is done by 14:00.
+[click] On Friday, take the same loop to as many other agents of the line as you want. Pick by where the points are lost, or add an agent of your own. Then freeze your fork; the final runs and everything is done by 14:00.
 -->
 
 ---
@@ -340,7 +331,7 @@ clicks: 4
     <g class="dg-solid">
       <rect x="528" y="84" width="124" height="80" rx="3"/>
       <text x="540" y="106" class="dg-cap">GRADING</text>
-      <text x="540" y="130" style="font-size: 15px; font-weight: 700">hidden checks</text>
+      <text x="540" y="130" style="font-size: 15px; font-weight: 700">right answers</text>
     </g>
     <ph-lock-simple-bold x="540" y="138" width="16" height="16" style="color: #b3a7f2" />
     <text x="590" y="186" text-anchor="middle" class="dg-note" style="font-size: 12px">never runs your code</text>
@@ -359,26 +350,16 @@ clicks: 4
   </g>
   <!-- the 100 points -->
   <g v-click="4">
-    <text x="0" y="250" class="dg-cap">100 POINTS · HALF OF THEM FOR CORRECT NUMBERS</text>
-    <rect x="0" y="262" width="427" height="28" rx="2" class="dg-block"/>
-    <text x="8" y="281" style="font-size: 14px; font-weight: 700; fill: #fff">50</text>
+    <text x="0" y="250" class="dg-cap">100 POINTS · 70 FOR RIGHT ANSWERS</text>
+    <rect x="0" y="262" width="598" height="28" rx="2" class="dg-block"/>
+    <text x="8" y="281" style="font-size: 14px; font-weight: 700; fill: #fff">70</text>
     <text x="0" y="308" class="dg-note" style="font-size: 11.5px">Correctness</text>
-    <rect x="430" y="262" width="126" height="28" rx="2" class="dg-block-soft"/>
-    <text x="438" y="281" style="font-size: 14px; font-weight: 700; fill: #080635">15</text>
-    <text x="430" y="308" class="dg-note" style="font-size: 11.5px">Efficiency</text>
-    <rect x="559" y="262" width="83" height="28" rx="2" class="dg-block-soft"/>
-    <text x="567" y="281" style="font-size: 14px; font-weight: 700; fill: #080635">10</text>
-    <text x="559" y="308" class="dg-note" style="font-size: 11.5px">Governance</text>
-    <rect x="645" y="262" width="83" height="28" rx="2" class="dg-block-soft"/>
-    <text x="653" y="281" style="font-size: 14px; font-weight: 700; fill: #080635">10</text>
-    <text x="645" y="308" class="dg-note" style="font-size: 11.5px">Dashboard</text>
-    <rect x="731" y="262" width="83" height="28" rx="2" class="dg-block-soft"/>
-    <text x="739" y="281" style="font-size: 14px; font-weight: 700; fill: #080635">10</text>
-    <text x="731" y="308" class="dg-note" style="font-size: 11.5px">Own</text>
-    <text x="731" y="322" class="dg-note" style="font-size: 11.5px">benchmark</text>
-    <rect x="817" y="262" width="40" height="28" rx="2" class="dg-block-soft"/>
-    <text x="825" y="281" style="font-size: 14px; font-weight: 700; fill: #080635">5</text>
-    <text x="817" y="308" class="dg-note" style="font-size: 11.5px">Interface</text>
+    <rect x="601" y="262" width="127" height="28" rx="2" class="dg-block-soft"/>
+    <text x="609" y="281" style="font-size: 14px; font-weight: 700; fill: #080635">15</text>
+    <text x="601" y="308" class="dg-note" style="font-size: 11.5px">Efficiency</text>
+    <rect x="731" y="262" width="127" height="28" rx="2" class="dg-block-soft"/>
+    <text x="739" y="281" style="font-size: 14px; font-weight: 700; fill: #080635">15</text>
+    <text x="731" y="308" class="dg-note" style="font-size: 11.5px">Own benchmark</text>
   </g>
 </svg>
 
@@ -391,13 +372,13 @@ clicks: 4
 </style>
 
 <!--
-This is the point of the capstone: not the best prompt for a known case, but a factory that generalises. On Friday the organisers open an issue nobody has seen.
+This is the point of the capstone: not the best prompt for a known case, but a factory that generalises. On Friday the organisers open a request nobody has seen.
 
-[click] Then the race. Every team's factory builds it in the same CI pipeline, one the team cannot change. One run, 45 minutes, unattended, no reruns for bad luck. You watch.
+[click] Then the race. Every team's factory answers it in the same CI pipeline, one the team cannot change. One run, 45 minutes, unattended, no reruns for bad luck. You watch.
 
-[click] A separate job grades the product with hidden acceptance checks. It never runs your code, and the score says which checks failed, not what they check.
+[click] A separate job grades the answers against the right ones, which only the organisers have. It never runs your code.
 
 [click] And the podium. One team wins.
 
-[click] Correctness weighs half, on purpose: a well-governed product with wrong numbers is wrong. Efficiency only counts as far as the product is correct. The request uses a part of the warehouse the public products hardly touch, so only a factory that learned how Fernhill's data works gets the numbers right. After the final each team tells the change that mattered most, one thing that did not work, and how well their own benchmark predicted their final score.
+[click] Right answers weigh 70 points. Efficiency only counts as far as the answers are right. The request asks about things the practice requests hardly touch, so only a factory that learned how Fernhill's data works gets the numbers right. After the final each team tells the change that mattered most, one thing that did not work, and how well their own benchmark predicted their final score.
 -->

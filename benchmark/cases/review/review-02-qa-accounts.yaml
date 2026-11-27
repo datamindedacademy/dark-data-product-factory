@@ -1,0 +1,11 @@
+id: review-02-qa-accounts
+stage: review
+description: The test accounts on fernhill.test are not filtered out.
+input:
+  issue: products/category_performance/issue.md
+  spec: products/category_performance/spec.json
+  work: fixtures/review/qa_accounts
+expected:
+  verdict: request_changes
+  defects:
+    - {id: test_accounts, any: [fernhill.test, test account, qa account, qa tester]}

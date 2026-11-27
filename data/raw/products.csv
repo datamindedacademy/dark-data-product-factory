@@ -1,0 +1,83 @@
+product_id,sku,product_name,category,subcategory,list_price,unit_cost,launched_at,is_active
+P0001,FH-TEN-0001,Backpacking tent Cairn Trail,Tents ,Backpacking tents,114.95,65.73,2023-11-25,true
+P0002,FH-TEN-0002,Backpacking tent Fjord Pro,tents,Backpacking tents,94.95,47.49,2023-08-09,true
+P0003,FH-TEN-0003,Backpacking tent Alpine Lite,tents,Backpacking tents,584.95,308.67,2021-12-01,true
+P0004,FH-TEN-0004,Backpacking tent Summit Lite,Tents,Backpacking tents,554.95,310.43,2022-06-22,true
+P0005,FH-TEN-0005,Backpacking tent Ardenne Lite,Tents,Backpacking tents,394.95,208.10,2023-06-23,true
+P0006,FH-TEN-0006,Family tent Alpine Pro,Tents,Family tents,309.95,146.09,2022-08-27,true
+P0007,FH-TEN-0007,Family tent Ardenne Lite,Tents,Family tents,434.95,224.90,2023-05-18,true
+P0008,FH-TEN-0008,Family tent Alpine Pro,tents,Family tents,99.95,47.45,2022-11-14,true
+P0009,FH-TEN-0009,Family tent Cairn XT,Tents,Family tents,264.95,133.85,2021-08-17,true
+P0010,FH-TEN-0010,Family tent Ridge XT,Tents,Family tents,389.95,218.44,2022-10-13,true
+P0011,FH-TEN-0011,Tarp Cairn Lite,Tents,Tarps,574.95,328.01,2022-12-02,true
+P0012,FH-TEN-0012,Tarp Cairn Lite,Tents ,Tarps,379.95,179.11,2022-02-01,true
+P0013,FH-TEN-0013,Tarp Dune 2.0,Tents,Tarps,344.95,175.95,2021-12-19,true
+P0014,FH-TEN-0014,Tarp Cairn Trail,Tents,Tarps,219.95,120.87,2022-05-03,true
+P0015,FH-SLE-0015,Down bag Moor Pro,Sleeping Bags,Down bags,294.95,155.78,2021-10-07,true
+P0016,FH-SLE-0016,Down bag Cairn Pro,Sleeping Bags,Down bags,404.95,187.28,2023-11-21,true
+P0017,FH-SLE-0017,Down bag Moor Classic,Sleeping Bags,Down bags,44.95,20.83,2022-11-17,true
+P0018,FH-SLE-0018,Down bag Ardenne Trail,Sleeping Bags,Down bags,209.95,106.22,2022-07-27,true
+P0019,FH-SLE-0019,Down bag Fjord Trail,Sleeping Bags,Down bags,149.95,74.41,2023-01-09,true
+P0020,FH-SLE-0020,Synthetic bag Moor Classic,Sleeping Bags,Synthetic bags,289.95,144.12,2023-02-13,true
+P0021,FH-SLE-0021,Synthetic bag Moor Classic,Sleeping Bags,Synthetic bags,169.95,90.71,2022-02-04,true
+P0022,FH-SLE-0022,Synthetic bag Moor XT,Sleeping Bags ,Synthetic bags,149.95,71.22,2021-07-29,true
+P0023,FH-SLE-0023,Synthetic bag Ridge 2.0,Sleeping Bags,Synthetic bags,229.95,122.91,2023-01-26,false
+P0024,FH-SLE-0024,Synthetic bag Cairn Pro,Sleeping Bags,Synthetic bags,149.95,76.66,2023-09-13,false
+P0025,FH-SLE-0025,Liner Fjord 2.0,Sleeping Bags,Liners,319.95,165.34,2023-08-04,true
+P0026,FH-SLE-0026,Liner Dune Classic,SLEEPING BAGS,Liners,129.95,64.29,2021-11-24,true
+P0027,FH-SLE-0027,Liner Summit Trail,Sleeping Bags,Liners,309.95,156.30,2023-01-25,true
+P0028,FH-SLE-0028,Liner Summit Trail,Sleeping Bags,Liners,194.95,92.96,2022-04-09,true
+P0029,FH-BAC-0029,Daypack Dune Trail,Backpacks,Daypacks,119.95,49.72,2022-04-14,true
+P0030,FH-BAC-0030,Daypack Ardenne Classic,Backpacks ,Daypacks,164.95,78.26,2022-08-16,true
+P0031,FH-BAC-0031,Daypack Ardenne 2.0,Backpacks,Daypacks,29.95,14.43,2023-05-24,true
+P0032,FH-BAC-0032,Daypack Cairn Pro,Backpacks ,Daypacks,99.95,45.14,2022-05-20,true
+P0033,FH-BAC-0033,Daypack Cairn XT,BACKPACKS,Daypacks,174.95,76.24,2022-08-24,true
+P0034,FH-BAC-0034,Trekking pack Alpine Trail,Backpacks,Trekking packs,54.95,25.88,2021-10-21,true
+P0035,FH-BAC-0035,Trekking pack Ardenne Pro,Backpacks,Trekking packs,54.95,24.22,2022-11-14,true
+P0036,FH-BAC-0036,Trekking pack Cairn Trail,Backpacks,Trekking packs,69.95,30.16,2023-08-11,true
+P0037,FH-BAC-0037,Trekking pack Ridge 2.0,Backpacks,Trekking packs,129.95,57.93,2021-12-22,true
+P0038,FH-BAC-0038,Hydration Moor Pro,Backpacks,Hydration,149.95,63.74,2023-03-06,true
+P0039,FH-BAC-0039,Hydration Fjord Pro,Backpacks,Hydration,209.95,102.53,2023-01-31,true
+P0040,FH-BAC-0040,Hydration Alpine 2.0,Backpacks,Hydration,189.95,81.69,2023-01-01,true
+P0041,FH-FOO-0041,Hiking boot Dune Trail,Footwear,Hiking boots,154.95,71.24,2022-08-13,true
+P0042,FH-FOO-0042,Hiking boot Summit Lite,Footwear,Hiking boots,144.95,75.58,2021-12-07,true
+P0043,FH-FOO-0043,Hiking boot Dune Lite,Footwear,Hiking boots,129.95,58.11,2023-04-14,true
+P0044,FH-FOO-0044,Hiking boot Alpine Pro,Footwear,Hiking boots,194.95,96.66,2021-10-15,true
+P0045,FH-FOO-0045,Hiking boot Ridge Trail,Footwear,Hiking boots,124.95,65.47,2023-11-04,true
+P0046,FH-FOO-0046,Trail runner Dune XT,Footwear,Trail runners,164.95,76.91,2025-08-02,true
+P0047,FH-FOO-0047,Trail runner Ridge Classic,Footwear,Trail runners,234.95,121.50,2021-10-11,true
+P0048,FH-FOO-0048,Trail runner Dune Trail,Footwear ,Trail runners,114.95,57.73,2023-04-21,true
+P0049,FH-FOO-0049,Sandal Ridge 2.0,Footwear,Sandals,219.95,101.33,2023-04-06,true
+P0050,FH-FOO-0050,Sandal Summit Trail,Footwear,Sandals,204.95,101.92,2023-03-04,false
+P0051,FH-FOO-0051,Sandal Ardenne XT,footwear,Sandals,119.95,54.93,2023-08-30,true
+P0052,FH-FOO-0052,Sandal Moor 2.0,Footwear ,Sandals,234.95,120.81,2023-03-14,true
+P0053,FH-FOO-0053,Sandal Cairn Classic,Footwear,Sandals,119.95,56.26,2022-08-10,true
+P0054,FH-APP-0054,Jacket Moor 2.0,Apparel,Jackets,49.95,18.60,2023-04-05,true
+P0055,FH-APP-0055,Jacket Moor XT,Apparel,Jackets,159.95,68.28,2023-07-10,true
+P0056,FH-APP-0056,Jacket Cairn XT,Apparel,Jackets,214.95,84.81,2023-03-07,true
+P0057,FH-APP-0057,Base layer Fjord Lite,Apparel,Base layers,324.95,142.50,2021-11-16,true
+P0058,FH-APP-0058,Base layer Dune XT,Apparel,Base layers,154.95,58.15,2022-08-28,true
+P0059,FH-APP-0059,Base layer Cairn Pro,Apparel ,Base layers,284.95,113.80,2022-11-16,true
+P0060,FH-APP-0060,Base layer Ridge Pro,Apparel,Base layers,374.95,151.84,2022-12-21,true
+P0061,FH-APP-0061,Trouser Dune Lite,apparel,Trousers,244.95,89.06,2023-07-14,false
+P0062,FH-APP-0062,Trouser Ridge Classic,Apparel,Trousers,354.95,129.91,2023-09-06,true
+P0063,FH-APP-0063,Trouser Moor Trail,Apparel ,Trousers,64.95,25.72,2023-02-21,false
+P0064,FH-APP-0064,Trouser Dune 2.0,Apparel,Trousers,54.95,23.90,2022-05-25,true
+P0065,FH-APP-0065,Trouser Ardenne Pro,apparel,Trousers,169.95,61.26,2022-05-23,true
+P0066,FH-APP-0066,Fleece Moor 2.0,Apparel,Fleeces,99.95,37.09,2022-03-25,true
+P0067,FH-APP-0067,Fleece Fjord Classic,Apparel,Fleeces,354.95,144.80,2023-08-09,true
+P0068,FH-APP-0068,Fleece Moor Trail,Apparel,Fleeces,89.95,36.30,2021-11-10,true
+P0069,FH-APP-0069,Fleece Dune Pro,apparel,Fleeces,224.95,93.75,2023-04-25,true
+P0070,FH-APP-0070,Fleece Dune Trail,Apparel ,Fleeces,339.95,143.29,2023-09-26,true
+P0071,FH-CAM-0071,Stove Alpine Pro,CAMPING KITCHEN,Stoves,34.95,14.70,2023-10-12,true
+P0072,FH-CAM-0072,Stove Alpine Pro,Camping Kitchen,Stoves,149.95,68.04,2022-05-18,true
+P0073,FH-CAM-0073,Stove Ridge Classic,Camping Kitchen,Stoves,139.95,60.66,2022-03-19,true
+P0074,FH-CAM-0074,Stove Fjord XT,CAMPING KITCHEN,Stoves,109.95,49.62,2024-06-09,true
+P0075,FH-CAM-0075,Stove Cairn XT,Camping Kitchen,Stoves,84.95,39.17,2023-01-13,true
+P0076,FH-CAM-0076,Cookware Fjord Pro,Camping Kitchen,Cookware,54.95,24.02,2022-06-26,true
+P0077,FH-CAM-0077,Cookware Dune 2.0,Camping Kitchen,Cookware,24.95,9.46,2025-04-03,true
+P0078,FH-CAM-0078,Cookware Moor Trail,Camping Kitchen,Cookware,179.95,82.17,2023-09-02,true
+P0079,FH-CAM-0079,Cookware Fjord Lite,Camping Kitchen,Cookware,114.95,51.16,2021-11-02,true
+P0080,FH-CAM-0080,Water filter Dune 2.0,Camping Kitchen,Water filters,79.95,35.55,2022-09-02,true
+P0081,FH-CAM-0081,Water filter Alpine Pro,Camping Kitchen,Water filters,144.95,57.91,2022-07-19,true
+P0082,FH-CAM-0082,Water filter Alpine Pro,Camping Kitchen,Water filters,119.95,51.18,2023-07-02,true

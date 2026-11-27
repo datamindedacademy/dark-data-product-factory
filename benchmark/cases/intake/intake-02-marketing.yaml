@@ -1,17 +1,13 @@
 id: intake-02-marketing
 stage: intake
-description: Marketing channel performance. Traps - anonymous sessions, QA accounts, cancelled conversions, ROAS of unpaid channels.
-tags: [dev]
+description: Sessions and spend. Only counted orders are conversions.
 input:
   issue: products/marketing_performance/issue.md
 expected:
   status: ready
-  oracle_spec: products/marketing_performance/spec.yaml
-  traps:
-    - {id: qa_accounts, keywords: [fernhill.test, qa account, test account, internal account, qa tester, test customer]}
-    - {id: cancelled_orders, keywords: [cancel]}
-    - {id: unpaid_channels, keywords: [organic, unpaid, no spend, undefined, not paid]}
-    - {id: anonymous_sessions, keywords: [anonymous, customer_id is null, not logged, null customer, logged-in, logged in]}
-  questions:
-    - {id: conversion_by_channel, all_of: [[session], [conversion, convert]]}
-    - {id: roas, all_of: [[roas, return on ad spend, return on spend, revenue per euro, per euro]]}
+  right_spec: products/marketing_performance/spec.json
+  questions: [Q1, Q2, Q3]
+  mentions:
+    - {id: counted_orders, any: [shipped, delivered]}
+    - {id: test_accounts, any: [fernhill.test, test account, qa account]}
+    - {id: spend, any: [marketing_spend, spend]}
