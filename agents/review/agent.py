@@ -34,7 +34,6 @@ def build(workspace):
         instructions=(HERE / "instructions.md").read_text(),
         # skills=[HERE / "skills" / "review-checklist"],  # a folder with a SKILL.md (name + description on top)
         # tools=[checklist],                              # functions, Agno toolkits or MCPTools(command="...")
-        # model="qwen/qwen4-max",                         # a second opinion from another model can catch more
         # effort="low",                                   # let the model reason first: low, medium or high
         # max_tool_calls=40,                              # the run stops after this many tool calls
     )

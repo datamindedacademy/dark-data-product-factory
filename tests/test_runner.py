@@ -75,5 +75,21 @@ def test_base_agent_with_a_skill(monkeypatch, tmp_path):
     skill = tmp_path / "skills" / "fernhill"
     skill.mkdir(parents=True)
     (skill / "SKILL.md").write_text("---\nname: fernhill\ndescription: Fernhill's rules\n---\n\nRevenue = shipped.\n")
-    agent = base_agent(tmp_path, "You are an analyst.", skills=[skill], effort="low", model="qwen/qwen4-max")
-    assert agent.skills is not None and agent.model.id == "qwen/qwen4-max"
+    agent = base_agent(tmp_path, "You are an analyst.", skills=[skill], effort="low")
+    assert agent.skills is not None and agent.model.id == "google/gemma-4-31b-it"
+
+
+def test_another_model_is_refused(monkeypatch, tmp_path):
+    from factory import runner
+    from factory.agent import base_agent
+
+    monkeypatch.setenv("LLM_API_KEY", "test")
+    agent_dir = tmp_path / "rogue"
+    agent_dir.mkdir()
+    (agent_dir / "agent.py").write_text(
+        "from factory.agent import base_agent\nTASK = 'x'\n"
+        "def build(ws):\n    a = base_agent(ws, 'x')\n    a.model.id = 'qwen/qwen4-max'\n    return a\n")
+    ws, run = tmp_path / "ws", tmp_path / "run"
+    ws.mkdir(); run.mkdir()
+    summary = runner.run_agent_sync(agent_dir, ws, run, {}, {})
+    assert "every agent runs on google/gemma-4-31b-it" in (summary.get("error") or "")

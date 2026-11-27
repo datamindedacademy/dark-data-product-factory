@@ -111,6 +111,8 @@ Before announcing a winner, read the diff of the top teams' `agents/` folder.
 - **A human in the loop.** The run job has open network access, so code committed before the freeze
   could fetch answers written after the reveal. The freeze makes that deliberate fraud, visible in the
   diff; only a runner with an egress allowlist would prevent it.
+- **Another model behind a tool.** The runner refuses an agent on another model, but a tool can call
+  any OpenRouter model with the same key. The key's activity log shows the models used; check it.
 - **One run per team.** Agents are noisy. Dispatch each team three times and take the median if the
   budget allows.
 - **The benchmark points measure validity, not usefulness.** Three trivial but valid cases earn full

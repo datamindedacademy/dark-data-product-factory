@@ -21,7 +21,7 @@ from contextlib import nullcontext
 from pathlib import Path
 from typing import Any
 
-from factory import paths, phoenix
+from factory import llm, paths, phoenix
 from factory.tracing import Tracer
 
 
@@ -93,6 +93,8 @@ async def run_agent(agent_dir: Path, ws: Path, run_dir: Path, ctx: dict[str, Any
         agent = await agent if asyncio.iscoroutine(agent) else agent
         agent.tool_hooks = [*(agent.tool_hooks or []), workspace_guard(ws)]
         model = getattr(agent.model, "id", "?")
+        if model != llm.MODEL:
+            raise ValueError(f"{agent_dir.name} uses {model}: every agent runs on {llm.MODEL}")
         tracer = Tracer(run_dir, {**meta, "model": model})
         attrs = nullcontext()
         if phoenix.setup():  # one Phoenix session per benchmark or line run

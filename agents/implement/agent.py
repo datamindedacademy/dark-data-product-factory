@@ -42,7 +42,6 @@ def build(workspace):
         instructions=(HERE / "instructions.md").read_text(),
         # skills=[HERE / "skills" / "fernhill-data"],    # a folder with a SKILL.md (name + description on top)
         # tools=[check_answers_tool(workspace), metrics],  # functions, Agno toolkits or MCP servers
-        # model="qwen/qwen4-max",                        # any OpenRouter model; the default is small and cheap
         # effort="low",                                  # let the model reason first: low, medium or high
         # max_tool_calls=40,                             # the run stops after this many tool calls
     )

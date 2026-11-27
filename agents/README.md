@@ -46,7 +46,7 @@ def build(workspace):
 ```
 
 Each `agent.py` has the levers in it, commented out: a skill, a tool (with a working example for
-that station), an MCP server, another model, reasoning. Uncomment one, run the benchmark, keep it if
+that station), an MCP server, reasoning. Uncomment one, run the benchmark, keep it if
 the score goes up.
 
 The base agent can read and write files, run shell commands (Python with duckdb and pandas) and
@@ -59,7 +59,6 @@ base_agent(
     instructions="...",                       # more context: Fernhill's rules, a checklist, examples
     skills=[HERE / "skills" / "fernhill"],    # folders with a SKILL.md, loaded when the agent needs them
     tools=[my_function, MCPTools(command="...")],  # Python functions, Agno toolkits, an MCP server
-    model="qwen/qwen4-max",                   # any OpenRouter model
     effort="low",                             # reasoning before answering: low, medium or high
     max_tool_calls=40,
 )

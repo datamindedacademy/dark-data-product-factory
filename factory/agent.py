@@ -7,8 +7,8 @@ and shell commands, and query the CSV files with SQL, all inside its workspace.
         return base_agent(workspace, instructions="You are ...")
 
 Add context with the keyword arguments: more `instructions`, `skills` (folders with a SKILL.md),
-`tools` (Python functions or Agno toolkits, an MCP server via `agno.tools.mcp.MCPTools`), another
-`model`, or `effort` to make the model reason before it answers.
+`tools` (Python functions or Agno toolkits, an MCP server via `agno.tools.mcp.MCPTools`), or
+`effort` to make the model reason before it answers. The model is the same for everyone (`llm.MODEL`).
 """
 
 from __future__ import annotations
@@ -20,14 +20,11 @@ from typing import Any
 
 from factory import llm
 
-DEFAULT_MODEL = llm.DEFAULT_MODEL
 
-
-def base_agent(workspace: Path, instructions: str, *, model: str = DEFAULT_MODEL, effort: str | None = None,
+def base_agent(workspace: Path, instructions: str, *, effort: str | None = None,
                tools: list[Any] | None = None, skills: list[str | Path] | None = None, max_tool_calls: int = 40):
     """An Agno agent for one workspace.
 
-    model           any OpenRouter model id, e.g. "google/gemma-4-31b-it" or "qwen/qwen4-max"
     effort          None (no reasoning), "low", "medium" or "high"
     tools           extra tools on top of files, shell and SQL
     skills          skill folders, each with a SKILL.md; the agent loads one when it needs it
@@ -38,7 +35,7 @@ def base_agent(workspace: Path, instructions: str, *, model: str = DEFAULT_MODEL
     from agno.tools.file import FileTools
 
     return Agent(
-        model=llm.model(model, effort),
+        model=llm.model(effort),
         instructions=instructions,
         tools=[FileTools(base_dir=workspace), shell_tool(workspace), sql_tool(workspace), *(tools or [])],
         skills=Skills(loaders=[LocalSkills(str(s)) for s in skills]) if skills else None,

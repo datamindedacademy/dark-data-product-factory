@@ -106,10 +106,9 @@ Preparation, secrets, the hidden right answers, the freeze-and-reveal commands a
 are in [competition.md](competition.md). On the day:
 
 - Before the kick-off: the baseline's station scores and its practice-run score, cost and duration
-  are on the board. They depend on the model, so they are not in the repository.
+  are on the board. They are not in the repository.
 - On Thursday, check that every team has one agent going round the loop: a score, a trace read, a
   change measured. A team stuck on tooling goes back to the baseline agent and changes its instructions.
-- The default model is `google/gemma-4-31b-it` (OpenRouter): small, open and cheap on purpose, so the
-  baseline shows how the factory works and leaves most of the points on the table. An agent can use
-  any OpenRouter model (`model="qwen/qwen4-max"`). That is a lever, and the easiest one, so expect
-  every team to try it.
+- Every agent runs on `google/gemma-4-31b-it` (OpenRouter): small, open and cheap on purpose, so the
+  baseline leaves most of the points on the table. Teams can't choose the model: the runner stops an
+  agent that uses another one. They win on context (instructions, skills, tools) and reasoning (`effort=`).

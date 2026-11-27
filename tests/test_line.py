@@ -14,7 +14,7 @@ class Out:
     messages, metrics, status = [], None, "completed"
 
 class Fake:
-    model, tool_hooks = type("M", (), {{"id": "fake"}})(), []
+    model, tool_hooks = type("M", (), {{"id": "google/gemma-4-31b-it"}})(), []
     def __init__(self, ws): self.ws = pathlib.Path(ws)
     async def arun(self, task):
         {body}
