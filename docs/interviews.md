@@ -7,6 +7,33 @@ know it, you have to put it there yourself (a skill, a CLAUDE.md, a semantic mod
 
 Everything below holds for every data product, not only for one.
 
+## Who is who
+
+When two people define a term differently, the owner of the term decides.
+
+```mermaid
+flowchart TD
+    ceo["<b>Hilde Claes</b><br/>CEO"]
+    ceo --> fin["<b>Finance</b>"]
+    ceo --> retail["<b>Retail operations</b><br/>Marc Dubois, director"]
+    ceo --> mkt["<b>Marketing</b>"]
+    ceo --> tech["<b>Technology</b>"]
+
+    fin --> sofie["Sofie Maes<br/>finance controller"]
+    retail --> stores["Six store managers<br/>Brussels, Antwerp, Ghent,<br/>Amsterdam, Lille, London"]
+    mkt --> lotte["Lotte Janssens<br/>CRM manager"]
+    mkt --> pieter["Pieter De Wolf<br/>performance marketing lead"]
+    tech --> ana["Ana Costa<br/>data platform"]
+    tech --> app["Web shop and app team"]
+    tech --> ae["Analytics engineering<br/><i>you: the data products</i>"]
+
+    sofie -.-|owns| t1(["revenue, refunds, currencies"])
+    lotte -.-|owns| t2(["customers, consent"])
+    retail -.-|owns| t3(["stores, store comparisons"])
+    pieter -.-|owns| t4(["marketing spend, campaigns"])
+    ana -.-|owns| t5(["raw and staging data"])
+```
+
 ## Sofie Maes, finance controller
 
 > "Revenue is recognised when we ship. An order that is *placed* has not been paid or picked yet,
